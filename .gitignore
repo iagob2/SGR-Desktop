@@ -1,0 +1,136 @@
+# SGR Desktop - .gitignore
+# Ignora arquivos desnecessários para o repositório
+
+# ============================================================================
+# PYTHON (Backend)
+# ============================================================================
+
+# Ambiente virtual Python
+venv/
+env/
+ENV/
+.venv/
+
+# Bytecode Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribuição / Empacotamento
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# PyCharm
+.idea/
+
+# ============================================================================
+# NODE.JS / ELECTRON (Frontend)
+# ============================================================================
+
+# Dependências
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Build do Electron
+out/
+dist-electron/
+release/
+
+# ============================================================================
+# BANCO DE DADOS
+# ============================================================================
+
+# Arquivos de backup do PostgreSQL
+*.sql
+*.dump
+*.backup
+
+# Configuração com senhas (use config.env.example)
+backend/config.env
+
+# ============================================================================
+# SISTEMA OPERACIONAL
+# ============================================================================
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Linux
+*~
+.directory
+
+# ============================================================================
+# EDITORES E IDEs
+# ============================================================================
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# ============================================================================
+# LOGS E TEMPORÁRIOS
+# ============================================================================
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Arquivos temporários
+tmp/
+temp/
+*.tmp
+
+# Cache
+.cache/
+.npm/
+.pnpm-store/
+
+# ============================================================================
+# ARQUIVOS DE BACKUP E TESTE
+# ============================================================================
+
+# Arquivos de backup
+*.bak
+*.swp
+*.swo
+*~
+
+# Arquivos de teste locais
+test/
+tests/local/
+*.test.local

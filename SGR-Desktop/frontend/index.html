@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGR-Desktop - Sistema de Gerenciamento de Restaurantes</title>
+    <script>
+        // Verificar autenticação antes de carregar a página
+        const authenticated = localStorage.getItem('authenticated');
+        const restauranteId = localStorage.getItem('restaurante_id');
+        
+        if (authenticated !== 'true' || !restauranteId) {
+            console.log('❌ Usuário não autenticado, redirecionando para login...');
+            window.location.href = 'paginas/login.html';
+        } else {
+            console.log('✅ Usuário autenticado, restaurante_id:', restauranteId);
+        }
+        
+        // Função para verificar autenticação periodicamente
+        function verificarAutenticacao() {
+            const auth = localStorage.getItem('authenticated');
+            const id = localStorage.getItem('restaurante_id');
+            
+            if (auth !== 'true' || !id) {
+                console.log('⚠️ Autenticação perdida, redirecionando...');
+                window.location.href = 'paginas/login.html';
+            }
+        }
+        
+        // Verificar autenticação a cada 5 segundos
+        setInterval(verificarAutenticacao, 5000);
+        
+        // Verificar ao clicar em qualquer lugar da página
+        document.addEventListener('click', function(event) {
+            if (Math.random() < 0.05) { // 5% de chance de verificar
+                verificarAutenticacao();
+            }
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">Soborê</div>
+            </div>
+
+            <div class="nav-menu">
+                <a href="#" class="nav-item active" onclick="loadPage('dashboard')">
+                    <span class="nav-icon">📈</span>
+                    Dashboard
+                </a>
+                <a href="#" class="nav-item" onclick="loadPage('vendas')">
+                    <span class="nav-icon">💰</span>
+                    Gestão de Vendas
+                </a>
+               
+                <a href="#" class="nav-item" onclick="loadPage('cardapio')">
+                    <span class="nav-icon">🍽️</span>
+                    Cardápio Dinâmico
+                </a>
+                <a href="#" class="nav-item" onclick="loadPage('avaliacoes')">
+                    <span class="nav-icon">⭐</span>
+                    Avaliações
+                </a>
+                <a href="#" class="nav-item" onclick="loadPage('pedidos')">
+                    <span class="nav-icon">🛎️</span>
+                    Gestão de Pedidos
+                </a>
+            </div>
+            
+            <a href="#" class="logout-link" onclick="logout()">
+                <span>🚪</span>
+                Sair
+            </a>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Status Message -->
+            <div id="statusMessage" class="status-message" style="display: none;"></div>
+
+            <!-- Conteúdo das páginas será carregado aqui -->
+            <div id="pageContent">
+                <!-- Dashboard será carregado por padrão -->
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Função para carregar CSS dinamicamente
+        function loadCSS(href) {
+            // Remove CSS existente da página se houver
+            const existingCSS = document.querySelector(`link[href="${href}"]`);
+            if (existingCSS) {
+                existingCSS.remove();
+            }
+            
+            // Adiciona novo CSS
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = href;
+            document.head.appendChild(link);
+        }
+
+        // Navegação e carregamento de páginas
+        // Função auxiliar para carregar arquivos HTML (compatível com file://)
+        function loadHTMLFile(url) {
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open('GET', url, true);
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState === 4) {
+                        if (xhr.status === 200 || xhr.status === 0) { // status 0 para file://
+                            resolve(xhr.responseText);
+                        } else {
+                            reject(new Error(`HTTP ${xhr.status}: ${xhr.statusText}`));
+                        }
+                    }
+                };
+                xhr.onerror = function() {
+                    reject(new Error('Erro de rede ao carregar arquivo'));
+                };
+                xhr.send();
+            });
+        }
+
+        // Função para executar scripts de HTML carregado dinamicamente (SEQUENCIAL)
+        function executeScriptsFromHTML(htmlContent, callback) {
+            console.log('🔧 Executando scripts do HTML carregado SEQUENCIALMENTE...');
+            
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = htmlContent;
+            
+            const scripts = Array.from(tempDiv.getElementsByTagName('script'));
+            let currentIndex = 0;
+            let scriptsExecuted = 0;
+            
+            console.log(`📋 Total de scripts encontrados: ${scripts.length}`);
+            
+            // Função recursiva para processar scripts sequencialmente
+            function processNextScript() {
+                if (currentIndex >= scripts.length) {
+                    // Todos os scripts foram processados
+                    console.log(`✅ TODOS os ${scriptsExecuted} scripts executados SEQUENCIALMENTE`);
+                    if (callback && typeof callback === 'function') {
+                        callback(scriptsExecuted);
+                    }
+                    return;
+                }
+                
+                const originalScript = scripts[currentIndex];
+                const newScript = document.createElement('script');
+                
+                // Copiar todos os atributos do script original
+                Array.from(originalScript.attributes).forEach(attr => {
+                    newScript.setAttribute(attr.name, attr.value);
+                });
+                
+                if (originalScript.src) {
+                    // Script externo - AGUARDAR carregamento antes de continuar
+                    console.log(`📜 [${currentIndex + 1}/${scripts.length}] Carregando script externo: ${originalScript.src}`);
+                    
+                    // 🔥 CORREÇÃO CRÍTICA: Usar src diretamente (já é relativo correto)
+                    const scriptUrl = originalScript.src;
+                    console.log(`🔍 DEBUG: URL do script: ${scriptUrl}`);
+                    
+                    newScript.src = scriptUrl;
+                    
+                    newScript.onload = () => {
+                        console.log(`✅ [${currentIndex + 1}/${scripts.length}] Script externo carregado: ${originalScript.src}`);
+                        showDebugLog(`Script carregado: ${originalScript.src}`, 'success');
+                        scriptsExecuted++;
+                        currentIndex++;
+                        
+                        // 🔥 CRÍTICO: Aguardar um pouco para garantir execução completa
+                        setTimeout(() => {
+                            processNextScript(); // Processar próximo script
+                        }, 50);
+                    };
+                    
+                    newScript.onerror = (error) => {
+                        console.error(`❌ [${currentIndex + 1}/${scripts.length}] Erro ao carregar script: ${originalScript.src}`, error);
+                        showDebugLog(`ERRO ao carregar script: ${originalScript.src}`, 'error');
+                        currentIndex++;
+                        
+                        // Continuar mesmo com erro
+                        setTimeout(() => {
+                            processNextScript();
+                        }, 50);
+                    };
+                    
+                    // Adicionar script ao head para iniciar carregamento
+                    document.head.appendChild(newScript);
+                    
+                } else {
+                    // Script inline - executar imediatamente
+                    console.log(`📜 [${currentIndex + 1}/${scripts.length}] Executando script inline (${originalScript.textContent.length} caracteres)`);
+                    
+                    try {
+                        newScript.textContent = originalScript.textContent;
+                        document.head.appendChild(newScript);
+                        
+                        console.log(`✅ [${currentIndex + 1}/${scripts.length}] Script inline executado`);
+                        scriptsExecuted++;
+                        
+                    } catch (error) {
+                        console.error(`❌ [${currentIndex + 1}/${scripts.length}] Erro ao executar script inline:`, error);
+                    }
+                    
+                    currentIndex++;
+                    
+                    // Continuar imediatamente para o próximo script
+                    setTimeout(() => {
+                        processNextScript();
+                    }, 10);
+                }
+            }
+            
+            // Iniciar o processamento sequencial
+            if (scripts.length > 0) {
+                processNextScript();
+            } else {
+                console.log('⚠️ Nenhum script encontrado no HTML');
+                if (callback && typeof callback === 'function') {
+                    callback(0);
+                }
+            }
+        }
+
+        async function loadPage(pageName) {
+            try {
+                // Verificar autenticação antes de carregar qualquer página
+                const authenticated = localStorage.getItem('authenticated');
+                const restauranteId = localStorage.getItem('restaurante_id');
+                
+                if (authenticated !== 'true' || !restauranteId) {
+                    console.log('⚠️ Usuário não autenticado, redirecionando para login...');
+                    window.location.href = 'paginas/login.html';
+                    return;
+                }
+                
+                const pageContent = document.getElementById('pageContent');
+                
+                // Remover classe active de todos os nav-items
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                
+                // Adicionar classe active ao nav-item selecionado
+                const clickedItem = document.querySelector(`[onclick="loadPage('${pageName}')"]`);
+                if (clickedItem) {
+                    clickedItem.classList.add('active');
+                }
+                
+                // 🔥 CORREÇÃO CRÍTICA: Remover scripts de módulos para evitar conflitos de redeclaração
+                const scriptsToRemove = ['dashboard.js', 'vendas.js', 'cardapio.js', 'avaliacoes.js', 'pedidos.js'];
+                document.querySelectorAll('script[src]').forEach(script => {
+                    const scriptSrc = script.src;
+                    // Remover apenas scripts de módulo específicos, preservar bibliotecas essenciais
+                    if (scriptsToRemove.some(moduleScript => scriptSrc.includes(moduleScript))) {
+                        console.log('🗑️ Removendo script de módulo para evitar conflito:', scriptSrc);
+                        script.remove();
+                    }
+                });
+                
+                switch(pageName) {
+                    case 'dashboard':
+                        // Carregar CSS do dashboard
+                        loadCSS('css/dashboard.css');
+                        
+                        // Carregar HTML do dashboard
+                        console.log('🔄 Tentando carregar dashboard.html...');
+                        const dashboardHTML = await loadHTMLFile('paginas/dashboard.html');
+                        console.log('✅ Dashboard HTML carregado com sucesso');
+                        pageContent.innerHTML = dashboardHTML;
+                        
+                        // 🔥 CORREÇÃO CRÍTICA: Executar scripts do HTML carregado SEQUENCIALMENTE
+                        showDebugLog('Iniciando executeScriptsFromHTML para dashboard', 'info');
+                        showDebugLog(`HTML contém: ${dashboardHTML.includes('script') ? 'SIM' : 'NÃO'} tags script`, 'info');
+                        executeScriptsFromHTML(dashboardHTML, (scriptsCount) => {
+                            showDebugLog(`Dashboard: ${scriptsCount} scripts executados, iniciando carregamento...`, 'success');
+                            
+                            // 🔥 CORREÇÃO: Aguardar mais tempo para garantir que DOM esteja completamente pronto
+                            setTimeout(() => {
+                                if (typeof inicializarDashboard === 'function') {
+                                    showDebugLog('Inicializando Dashboard após execução sequencial de scripts', 'success');
+                                    inicializarDashboard();
+                                } else {
+                                    showDebugLog('Função inicializarDashboard NÃO encontrada após execução de scripts', 'error');
+                                }
+                            }, 500);
+                        });
+                        
+                        // 🔥 SCRIPT PRINCIPAL AGORA VEM DO HTML - Não há mais carregamento duplicado
+                        break;
+                        
+                    case 'vendas':
+                        // Carregar CSS das vendas
+                        loadCSS('css/vendas.css');
+                        
+                        // Carregar HTML das vendas
+                        console.log('🔄 Tentando carregar vendas.html...');
+                        const vendasHTML = await loadHTMLFile('paginas/vendas.html');
+                        console.log('✅ Vendas HTML carregado com sucesso');
+                        pageContent.innerHTML = vendasHTML;
+                        
+                        // 🔥 CORREÇÃO CRÍTICA: Executar scripts do HTML carregado SEQUENCIALMENTE
+                        executeScriptsFromHTML(vendasHTML, (scriptsCount) => {
+                            console.log(`🎯 Vendas: ${scriptsCount} scripts executados, iniciando carregamento...`);
+                            
+                            setTimeout(() => {
+                                if (typeof inicializarVendas === 'function') {
+                                    console.log('🎯 Inicializando Vendas após execução sequencial de scripts');
+                                    inicializarVendas();
+                                } else {
+                                    console.warn('⚠️ Função inicializarVendas não encontrada após execução de scripts');
+                                }
+                            }, 200);
+                        });
+                        
+                        // 🔥 SCRIPT PRINCIPAL AGORA VEM DO HTML - Não há mais carregamento duplicado
+                        break;
+                        
+                    case 'cardapio':
+                        // Carregar CSS do cardápio
+                        loadCSS('css/cardapio.css');
+                        
+                        // Carregar HTML do cardápio
+                        console.log('🔄 Tentando carregar cardapio.html...');
+                        const cardapioHTML = await loadHTMLFile('paginas/cardapio.html');
+                        console.log('✅ Cardápio HTML carregado com sucesso');
+                        pageContent.innerHTML = cardapioHTML;
+                        
+                        // 🔥 CORREÇÃO CRÍTICA: Executar scripts do HTML carregado SEQUENCIALMENTE
+                        executeScriptsFromHTML(cardapioHTML, (scriptsCount) => {
+                            console.log(`🎯 Cardápio: ${scriptsCount} scripts executados, iniciando carregamento...`);
+                            
+                            setTimeout(() => {
+                                if (typeof inicializarCardapio === 'function') {
+                                    console.log('🎯 Inicializando Cardápio após execução sequencial de scripts');
+                                    inicializarCardapio();
+                                } else {
+                                    console.warn('⚠️ Função inicializarCardapio não encontrada após execução de scripts');
+                                }
+                            }, 200);
+                        });
+                        
+                        // 🔥 SCRIPT PRINCIPAL AGORA VEM DO HTML - Não há mais carregamento duplicado
+                        break;
+                        
+                    case 'avaliacoes':
+                        // Carregar CSS das avaliações
+                        loadCSS('css/avaliacoes.css');
+                        
+                        // Carregar HTML das avaliações
+                        console.log('🔄 Tentando carregar avaliacoes.html...');
+                        const avaliacoesHTML = await loadHTMLFile('paginas/avaliacoes.html');
+                        console.log('✅ Avaliações HTML carregado com sucesso');
+                        pageContent.innerHTML = avaliacoesHTML;
+                        
+                        // 🔥 CORREÇÃO CRÍTICA: Executar scripts do HTML carregado SEQUENCIALMENTE
+                        executeScriptsFromHTML(avaliacoesHTML, (scriptsCount) => {
+                            console.log(`🎯 Avaliações: ${scriptsCount} scripts executados, iniciando carregamento...`);
+                            
+                            setTimeout(() => {
+                                if (typeof inicializarAvaliacoes === 'function') {
+                                    console.log('🎯 Inicializando Avaliações após execução sequencial de scripts');
+                                    inicializarAvaliacoes();
+                                } else {
+                                    console.warn('⚠️ Função inicializarAvaliacoes não encontrada após execução de scripts');
+                                }
+                            }, 200);
+                        });
+                        
+                        // 🔥 SCRIPT PRINCIPAL AGORA VEM DO HTML - Não há mais carregamento duplicado
+                        break;
+                        
+                    case 'pedidos':
+                        // Carregar CSS dos pedidos
+                        loadCSS('css/pedidos.css');
+                        
+                        // Carregar HTML dos pedidos
+                        console.log('🔄 Tentando carregar pedidos.html...');
+                        const pedidosHTML = await loadHTMLFile('paginas/pedidos.html');
+                        console.log('✅ Pedidos HTML carregado com sucesso');
+                        pageContent.innerHTML = pedidosHTML;
+                        
+                        // 🔥 CORREÇÃO CRÍTICA: Executar scripts do HTML carregado SEQUENCIALMENTE
+                        executeScriptsFromHTML(pedidosHTML, (scriptsCount) => {
+                            console.log(`🎯 Pedidos: ${scriptsCount} scripts executados, iniciando carregamento...`);
+                            
+                            // 🔥 CORREÇÃO: Aguardar scripts carregarem e inicializar
+                            setTimeout(() => {
+                                if (typeof PedidosApp !== 'undefined' && typeof PedidosApp.init === 'function') {
+                                    console.log('🎯 Inicializando Pedidos após execução sequencial de scripts');
+                                    // Verificar se já foi inicializado
+                                    if (!PedidosApp.config.restaurante_id) {
+                                        PedidosApp.init();
+                                    }
+                                }
+                            }, 100);
+                        });
+                        
+                        break;
+                        
+                    case 'estoque':
+                        pageContent.innerHTML = `
+                            <div class="page-header">
+                                <h1>Controle de Estoque</h1>
+                                <p>Gerencie o estoque dos seus produtos</p>
+                            </div>
+                            <div class="content-placeholder">
+                                <p>🚧 Página em desenvolvimento</p>
+                            </div>
+                        `;
+                        break;
+                        
+                    default:
+                        pageContent.innerHTML = `
+                            <div class="page-header">
+                                <h1>Página não encontrada</h1>
+                                <p>A página solicitada não existe</p>
+                            </div>
+                        `;
+                }
+                
+            } catch (error) {
+                console.error('❌ Erro ao carregar página:', error);
+                console.error('❌ Detalhes do erro:', {
+                    message: error.message,
+                    stack: error.stack,
+                    pageName: pageName,
+                    currentURL: window.location.href,
+                    baseURL: window.location.origin
+                });
+                
+                document.getElementById('pageContent').innerHTML = `
+                    <div class="flex items-center justify-center h-full">
+                        <div class="text-center max-w-md bg-white p-8 rounded-lg shadow-lg">
+                            <h2 class="text-2xl font-bold text-red-600 mb-4">Erro ao carregar página</h2>
+                            <p class="text-gray-600 mb-4">${error.message}</p>
+                            <div class="bg-gray-100 p-4 rounded-lg text-left text-sm mb-4">
+                                <p><strong>Página:</strong> ${pageName}</p>
+                                <p><strong>URL Base:</strong> ${window.location.origin}</p>
+                                <p><strong>Caminho Tentado:</strong> paginas/${pageName}.html</p>
+                            </div>
+                            <button onclick="location.reload()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                                Recarregar Página
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Função de logout
+        function logout() {
+            if (confirm('Tem certeza que deseja sair?')) {
+                // Limpar localStorage
+                localStorage.removeItem('authenticated');
+                localStorage.removeItem('restaurante_id');
+                localStorage.removeItem('restaurante_nome');
+                
+                console.log('🚪 Logout realizado, redirecionando para login...');
+                
+                // Redirecionar para login
+                window.location.href = 'paginas/login.html';
+            }
+        }
+
+        // Delegação de eventos para botões dinâmicos
+        document.body.addEventListener('click', function(event) {
+            // Botões de navegação dinâmicos
+            if (event.target.matches('[data-page]')) {
+                event.preventDefault();
+                const pageName = event.target.getAttribute('data-page');
+                console.log(`🔄 Navegação via delegação para: ${pageName}`);
+                loadPage(pageName);
+                return;
+            }
+            
+            // Botões de ação dinâmicos (CRUD, etc.)
+            if (event.target.matches('.btn-action')) {
+                event.preventDefault();
+                const action = event.target.getAttribute('data-action');
+                const target = event.target.getAttribute('data-target');
+                console.log(`🎯 Ação via delegação: ${action} em ${target}`);
+                
+                // Aqui você pode chamar funções específicas baseadas na ação
+                if (typeof window[action] === 'function') {
+                    window[action](target);
+                }
+                return;
+            }
+            
+            // Botões de formulário dinâmicos
+            if (event.target.matches('.btn-form')) {
+                event.preventDefault();
+                const formAction = event.target.getAttribute('data-form-action');
+                console.log(`📝 Ação de formulário via delegação: ${formAction}`);
+                return;
+            }
+        });
+
+        // Função de debug desabilitada para produção
+        function showDebugLog(message, type = 'info') {
+            // Debug logs desabilitados - apenas console para desenvolvimento
+            console.log(`[${new Date().toLocaleTimeString()}] ${message}`);
+        }
+
+        // Carregar dashboard por padrão quando a página carregar
+        document.addEventListener('DOMContentLoaded', () => {
+            showDebugLog('Página principal carregada, carregando dashboard...', 'info');
+            loadPage('dashboard');
+        });
+    </script>
+</body>
+</html>

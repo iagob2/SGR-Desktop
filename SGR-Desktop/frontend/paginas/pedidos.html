@@ -1,0 +1,161 @@
+<!-- Sistema de Pedidos - Layout Minimalista -->
+<div id="pedidosSection" class="section active">
+    <!-- Cabeçalho -->
+    <div class="page-header">
+        <h1 class="page-title">Gestão de Pedidos</h1>
+        <p class="page-subtitle">Acompanhe e gerencie todos os pedidos do restaurante</p>
+    </div>
+
+    <!-- Filtros Simples -->
+    <div class="filters-section">
+        <div class="filters-container">
+            <div class="filter-group">
+                <label for="statusFilter">Status:</label>
+                <select id="statusFilter" class="filter-select">
+                    <option value="">Todos</option>
+                    <option value="pendente">Aguardando</option>
+                    <option value="em_preparo">Em Preparo</option>
+                    <option value="entregue">Entregue</option>
+                    <option value="cancelado">Cancelado</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="dataFilter">Data:</label>
+                <input type="date" id="dataFilter" class="filter-input">
+            </div>
+            
+            <button id="limparFiltros" class="btn-secondary">Limpar</button>
+            <button id="atualizarPedidos" class="btn-primary">Atualizar</button>
+        </div>
+    </div>
+
+    <!-- Resumo KPIs Simples -->
+    <div class="kpi-summary">
+        <div class="kpi-item">
+            <span class="kpi-label">Total</span>
+            <span id="totalPedidos" class="kpi-value">0</span>
+        </div>
+        <div class="kpi-item">
+            <span class="kpi-label">Aguardando</span>
+            <span id="pendentes" class="kpi-value">0</span>
+        </div>
+        <div class="kpi-item">
+            <span class="kpi-label">Em Preparo</span>
+            <span id="emPreparo" class="kpi-value">0</span>
+        </div>
+        <div class="kpi-item">
+            <span class="kpi-label">Entregues</span>
+            <span id="entregues" class="kpi-value">0</span>
+        </div>
+        <div class="kpi-item">
+            <span class="kpi-label">Cancelados</span>
+            <span id="cancelados" class="kpi-value">0</span>
+        </div>
+    </div>
+
+    <!-- Tabela de Pedidos -->
+    <div class="pedidos-container">
+        <div class="table-container">
+            <table class="pedidos-table">
+                <thead>
+                    <tr>
+                        <th>Pedido</th>
+                        <th>Cliente</th>
+                        <th>Data/Hora</th>
+                        <th>Valor</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="pedidosTableBody">
+                    <!-- Dados carregados via JavaScript -->
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Loading/Empty State -->
+        <div id="loadingState" class="state-message">
+            <p>Carregando pedidos...</p>
+        </div>
+        
+        <div id="emptyState" class="state-message hidden">
+            <p>Nenhum pedido encontrado</p>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Detalhes do Pedido -->
+<div id="modalDetalhes" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitulo">Detalhes do Pedido</h3>
+            <button id="fecharModal" class="btn-close">&times;</button>
+        </div>
+        
+        <div class="modal-body">
+            <!-- Informações do Pedido -->
+            <div class="pedido-info">
+                <div class="info-row">
+                    <span class="info-label">Cliente:</span>
+                    <span id="detalheCliente" class="info-value">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Telefone:</span>
+                    <span id="detalheTelefone" class="info-value">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Data/Hora:</span>
+                    <span id="detalheDataHora" class="info-value">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Status Atual:</span>
+                    <span id="detalheStatus" class="info-value status-badge">-</span>
+                </div>
+            </div>
+
+            <!-- Itens do Pedido -->
+            <div class="itens-section">
+                <h4>Itens do Pedido:</h4>
+                <div id="detalheItens" class="itens-lista">
+                    <!-- Itens carregados via JavaScript -->
+                </div>
+            </div>
+
+            <!-- Observações -->
+            <div id="observacoesSection" class="observacoes-section">
+                <h4>Observações:</h4>
+                <p id="detalheObservacoes">-</p>
+            </div>
+            
+            <!-- Total -->
+            <div class="total-section">
+                <div class="total-row">
+                    <span class="total-label">Valor Total:</span>
+                    <span id="detalheTotal" class="total-value">R$ 0,00</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="modal-footer">
+            <!-- Atualização de Status -->
+            <div class="status-update">
+                <label for="novoStatus">Alterar Status:</label>
+                <select id="novoStatus" class="status-select">
+                    <option value="pendente">Pendente</option>
+                    <option value="em_preparo">Em Preparo</option>
+                    <option value="pronto">Pronto</option>
+                    <option value="entregue">Entregue</option>
+                    <option value="cancelado">Cancelado</option>
+                </select>
+                <button id="atualizarStatus" class="btn-primary">Atualizar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CSS Específico para Pedidos -->
+<link rel="stylesheet" href="css/pedidos.css">
+
+<!-- JavaScript -->
+<script src="js/pedidos.js"></script>

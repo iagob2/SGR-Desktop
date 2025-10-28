@@ -1,0 +1,267 @@
+<!-- Sistema de Cardápio Section -->
+<div id="cardapioSection" class="section active">
+    <div class="page-header">
+        <h1 class="page-title">🍽️ Sistema de Cardápio</h1>
+        <p class="page-subtitle">Gerencie seu cardápio de forma inteligente</p>
+    </div>
+
+    <!-- BARRA DE CONTROLES SUPERIOR -->
+    <div class="chart-section">
+        <div class="flex justify-between items-center">
+            <!-- LADO ESQUERDO - Filtros (70%) -->
+            <div class="flex items-center space-x-3 flex-1 max-w-[70%]">
+                <!-- Campo de Pesquisa -->
+                <div class="relative">
+                    <input 
+                        type="text" 
+                        id="searchInput"
+                        class="search-input w-80 pl-4 pr-10 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        placeholder="Buscar por nome do prato..."
+                    >
+                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+                
+                
+            </div>
+            
+            <!-- LADO DIREITO - Ações (30%) -->
+            <div class="flex items-center space-x-2">
+                <!-- Botão Novo Prato -->
+                <button id="novoPratoBtn" class="btn-primary text-white font-semibold px-5 py-2.5 rounded-lg shadow-md flex items-center space-x-2">
+                    <span class="text-lg">+</span>
+                    <span>Novo Prato</span>
+                </button>
+                
+                <!-- Botão Editar -->
+                <button id="btnEditar" class="btn-edit bg-blue-500 text-white px-4 py-2.5 rounded-lg flex items-center space-x-2 opacity-50 cursor-not-allowed transition-colors" disabled>
+                    <span>✏️</span>
+                    <span>Editar</span>
+                </button>
+                
+                <!-- Botão Remover -->
+                <button id="btnRemover" class="btn-remove border-2 border-red-500 text-red-500 px-4 py-2 rounded-lg flex items-center space-x-2 opacity-50 cursor-not-allowed transition-colors" disabled>
+                    <span>🗑️</span>
+                    <span>Remover</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CARDS DE KPIs PADRONIZADOS - REMOVIDOS -->
+    <!-- Mantendo a estrutura para não quebrar o layout -->
+    <div class="kpi-grid" style="display: none;">
+        <!-- Cards removidos -->
+    </div>
+
+
+    <!-- Lista de Pratos -->
+    <div class="chart-section">
+        <h2 class="text-xl font-semibold text-gray-800 mb-6">📋 Lista de Pratos</h2>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <input type="checkbox" id="selectAll" class="rounded border-gray-300">
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID/CÓDIGO</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PRATO</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">DESCRIÇÃO</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PREÇO</th>
+                    </tr>
+                </thead>
+                <tbody id="dishesTable" class="bg-white divide-y divide-gray-200">
+                    <!-- Pratos serão inseridos aqui -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL PARA ADICIONAR/EDITAR PRATO -->
+<div id="modalForm" class="modal-overlay hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle" class="modal-title">Novo Prato</h3>
+            <button id="modalClose" class="modal-close">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <form id="pratoForm" class="modal-body">
+            <div class="form-group">
+                <label for="nomePrato" class="form-label">Nome do Prato *</label>
+                <input type="text" id="nomePrato" name="nome" class="form-input" placeholder="Ex: Hambúrguer Clássico" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="descricaoPrato" class="form-label">Descrição</label>
+                <textarea id="descricaoPrato" name="descricao" class="form-textarea" rows="3" placeholder="Descreva o prato..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="precoPrato" class="form-label">Preço (R$) *</label>
+                <input type="number" id="precoPrato" name="preco" class="form-input" step="0.01" min="0" placeholder="Ex: 25.90" required>
+            </div>
+            
+            
+            <div class="form-group">
+                <label for="imagemPrato" class="form-label">URL da Imagem</label>
+                <input type="url" id="imagemPrato" name="imagemUrl" class="form-input" placeholder="https://exemplo.com/imagem.jpg">
+            </div>
+        </form>
+        
+        <div class="modal-footer">
+            <button type="button" id="modalCancel" class="btn-secondary">Cancelar</button>
+            <button type="button" id="modalSave" class="btn-primary">Salvar</button>
+        </div>
+    </div>
+</div>
+
+<!-- CSS para o Modal -->
+<style>
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px 0 24px;
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 20px;
+}
+
+.modal-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.modal-close:hover {
+    background-color: #f3f4f6;
+    color: #374151;
+}
+
+.modal-body {
+    padding: 0 24px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 6px;
+}
+
+.form-input, .form-textarea, .form-select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-input:focus, .form-textarea:focus, .form-select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 20px 24px 24px 24px;
+    border-top: 1px solid #e5e7eb;
+    margin-top: 20px;
+}
+
+.btn-secondary {
+    background-color: #f3f4f6;
+    color: #374151;
+    border: 1px solid #d1d5db;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+    background-color: #e5e7eb;
+}
+
+.btn-primary {
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-primary:hover {
+    background-color: #2563eb;
+}
+
+.hidden {
+    display: none !important;
+}
+</style>
+
+<!-- 🔥 SCRIPT PRINCIPAL: Carregado via executeScriptsFromHTML para evitar concorrência -->
+<script src="js/cardapio.js"></script>

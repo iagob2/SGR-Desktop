@@ -1,0 +1,41 @@
+<!-- Vendas Section -->
+<div id="vendasSection" class="section active">
+    <div class="page-header">
+        <h1 class="page-title">Gestão de Vendas</h1>
+        <p class="page-subtitle">Análise de vendas e faturamento</p>
+    </div>
+
+
+    <!-- Chart Section -->
+    <div class="chart-section">
+        <div class="chart-header">
+            <h2 class="chart-title">Análise de Vendas</h2>
+            <div class="chart-tabs">
+                <button class="chart-tab active" onclick="switchVendasTab('semanal')">Semanal</button>
+                <button class="chart-tab" onclick="switchVendasTab('mensal')">Mensal</button>
+                <button class="chart-tab" onclick="switchVendasTab('anual')">Anual</button>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <canvas id="vendasChart"></canvas>
+        </div>
+    <!-- Top 3 Produtos -->
+    <div class="chart-section">
+        <div class="chart-header">
+            <h3>Top 3 Produtos Mais Vendidos</h3>
+            <div class="chart-tabs">
+                <button class="chart-tab active" onclick="switchTopProdutosTab('semanal')">Semanal</button>
+                <button class="chart-tab" onclick="switchTopProdutosTab('mensal')">Mensal</button>
+                <button class="chart-tab" onclick="switchTopProdutosTab('anual')">Anual</button>
+            </div>
+        </div>
+        
+        <div id="topProductsTable">
+            <p>Carregando dados dos produtos...</p>
+        </div>
+    </div>
+
+<!-- 🔥 SCRIPT PRINCIPAL: Carregado via executeScriptsFromHTML para evitar concorrência -->
+<script src="js/vendas.js"></script>
+</div>

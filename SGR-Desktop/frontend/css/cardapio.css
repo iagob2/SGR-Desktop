@@ -1,0 +1,404 @@
+/* Cardápio - Estilos Específicos */
+
+/* Estilos básicos para o cardápio */
+.chart-section {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.kpi-card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    border-left: 4px solid #10B981;
+}
+
+.kpi-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6B7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.kpi-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 8px;
+}
+
+.kpi-growth {
+    font-size: 11px;
+    font-weight: 500;
+    color: #10B981;
+}
+
+.kpi-growth.positive {
+    color: #10B981;
+}
+
+.kpi-growth.negative {
+    color: #EF4444;
+}
+
+/* Correção do Header Principal (Muito alto) */
+.main-header {
+    background-color: #10B981; /* Mantenha o verde */
+    padding: 24px 32px; /* Reduza a altura superior/inferior para 24px */
+}
+
+/* Padronização dos Inputs/Filtros */
+.input-group input, 
+.input-group select {
+    border: 1px solid #D1D5DB;
+    border-radius: 6px;
+    padding: 10px 12px;
+    /* Garanta largura suficiente para os filtros */
+}
+
+/* Ajuste do Botão de Remoção (Vermelho) */
+#btnRemover {
+    background: white;
+    color: #EF4444; /* Vermelho Erro */
+    border: 1px solid #EF4444;
+    transition: all 0.2s;
+}
+#btnRemover:hover {
+    background: #FEF2F2; /* Fundo vermelho muito claro no hover */
+}
+
+/* Tabela e Cabeçalho (Clean Look) */
+.dish-list table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.dish-list th {
+    background-color: #F9FAFB; /* Cinza muito claro */
+    color: #4B5563; /* Cor do texto secundário */
+    font-weight: 600;
+    text-align: left;
+    padding: 12px;
+    border-bottom: 2px solid #E5E7EB;
+}
+/* Remova qualquer fundo azul nas linhas de dados */
+.dish-list td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #F3F4F6;
+}
+
+/* Estilos baseados no arquivo de referência */
+.gradient-bg {
+    background: linear-gradient(135deg, #10B981, #059669);
+}
+
+.card-hover {
+    transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transform: translateY(-1px);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #10B981, #059669);
+    transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+    filter: brightness(0.9);
+    transform: translateY(-1px);
+}
+
+.search-input:focus {
+    border-color: #3B82F6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.search-input:hover {
+    border-color: #3B82F6;
+}
+
+.btn-edit:hover {
+    background-color: #2563EB;
+}
+
+.btn-remove:hover {
+    background-color: #FEE2E2;
+}
+
+/* KPI específicos para cardápio */
+.kpi-excellent {
+    background: linear-gradient(135deg, #D1FAE5, #A7F3D0);
+}
+
+.kpi-good {
+    background: #FFFFFF;
+}
+
+.kpi-regular {
+    background: linear-gradient(135deg, #FEF3C7, #FDE68A);
+}
+
+.kpi-critical {
+    background: linear-gradient(135deg, #FEE2E2, #FECACA);
+}
+
+.kpi-no-data {
+    background: #F9FAFB;
+}
+
+/* Badges */
+.badge {
+    font-size: 9px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-excellent {
+    background: #10B981;
+    color: white;
+}
+
+.badge-attention {
+    background: #DC2626;
+    color: white;
+}
+
+.badge-improve {
+    background: #D97706;
+    color: white;
+}
+
+/* Tabela de Pratos */
+.pratos-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.pratos-table th {
+    background-color: #F9FAFB;
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    color: #6B7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #E5E7EB;
+}
+
+.pratos-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #F3F4F6;
+    font-size: 13px;
+}
+
+.pratos-table tr:hover {
+    background-color: #F9FAFB;
+}
+
+.pratos-table tr.selected {
+    background-color: #EFF6FF;
+}
+
+/* Checkbox personalizado */
+.dish-checkbox {
+    width: 16px;
+    height: 16px;
+    border: 2px solid #D1D5DB;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.dish-checkbox:checked {
+    background-color: #3B82F6;
+    border-color: #3B82F6;
+}
+
+/* Status dos pratos */
+.prato-status {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.prato-status.disponivel {
+    background-color: #D1FAE5;
+    color: #065F46;
+}
+
+.prato-status.indisponivel {
+    background-color: #F3F4F6;
+    color: #6B7280;
+}
+
+.prato-status.estoque-baixo {
+    background-color: #FEF3C7;
+    color: #92400E;
+}
+
+/* Botões de ação */
+.cardapio-btn {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-novo-prato {
+    background: linear-gradient(135deg, #10B981, #059669);
+    color: white;
+    font-weight: 600;
+}
+
+.btn-novo-prato:hover {
+    filter: brightness(0.9);
+    transform: translateY(-1px);
+}
+
+.btn-edit {
+    background-color: #3B82F6;
+    color: white;
+}
+
+.btn-edit:hover {
+    background-color: #2563EB;
+}
+
+.btn-remove {
+    background-color: transparent;
+    color: #EF4444;
+    border: 2px solid #EF4444;
+}
+
+.btn-remove:hover {
+    background-color: #FEE2E2;
+}
+
+.btn-edit:disabled,
+.btn-remove:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Filtros */
+.filters-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.search-input {
+    width: 240px;
+    padding: 8px 12px;
+    border: 1px solid #D1D5DB;
+    border-radius: 6px;
+    font-size: 13px;
+    transition: border-color 0.2s ease;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #3B82F6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.filter-select {
+    padding: 8px 12px;
+    border: 1px solid #D1D5DB;
+    border-radius: 6px;
+    font-size: 13px;
+    background: white;
+    cursor: pointer;
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: #3B82F6;
+}
+
+/* Demonstração de KPIs */
+.demo-controls {
+    background: white;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 20px;
+    border: 1px solid #E5E7EB;
+}
+
+.demo-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 12px;
+}
+
+.demo-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.demo-btn {
+    padding: 4px 8px;
+    border: none;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.demo-btn.excelente {
+    background-color: #D1FAE5;
+    color: #065F46;
+}
+
+.demo-btn.bom {
+    background-color: #DBEAFE;
+    color: #1E40AF;
+}
+
+.demo-btn.regular {
+    background-color: #FEF3C7;
+    color: #92400E;
+}
+
+.demo-btn.critico {
+    background-color: #FEE2E2;
+    color: #991B1B;
+}
+
+.demo-btn.sem-dados {
+    background-color: #F3F4F6;
+    color: #6B7280;
+}

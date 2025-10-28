@@ -1,0 +1,258 @@
+/* SGR-Desktop - Estilos CSS Base */
+
+:root {
+    /* Cores Primárias */
+    --color-primary: #2CB480;        /* Verde para menu e seleções */
+    --color-primary-hover: #24A06B;  /* Verde hover */
+    --color-blue: #3B82F6;           /* Azul para botões de gráficos */
+    --color-blue-hover: #2563EB;     /* Azul hover para gráficos */
+    
+    /* Cores de Texto */
+    --color-text-primary: #111827;
+    --color-text-secondary: #6B7280;
+    --color-text-green: #065F46;
+    
+    /* Cores de Fundo */
+    --color-bg-white: #FFFFFF;
+    --color-bg-gray: #F3F4F6;
+    --color-bg-light: #F9FAFB;
+    
+    /* Cores de Borda */
+    --color-border: #E5E7EB;
+    
+    /* Cores de Status */
+    --color-success-bg: #D1FAE5;
+    --color-success-text: #065F46;
+    --color-success-border: #A7F3D0;
+    
+    --color-error-bg: #FEE2E2;
+    --color-error-text: #991B1B;
+    --color-error-border: #FECACA;
+    
+    --color-loading-bg: #DBEAFE;
+    --color-loading-text: #1E40AF;
+    --color-loading-border: #BFDBFE;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--color-bg-gray);
+    color: var(--color-text-primary);
+    font-size: 14px;
+}
+
+.dashboard-container {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 240px;
+    background: var(--color-bg-white);
+    box-shadow: 2px 0 8px rgba(0,0,0,0.08);
+    padding: 24px 0;
+    position: relative;
+}
+
+.sidebar-header {
+    padding: 0 20px 24px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.logo {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--color-primary);
+    text-align: center;
+}
+
+.nav-menu {
+    padding: 20px 0;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 20px;
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+    cursor: pointer;
+}
+
+.nav-item:hover {
+    background-color: var(--color-bg-light);
+    color: var(--color-text-green);
+}
+
+.nav-item.active {
+    background-color: var(--color-bg-light);
+    color: var(--color-primary);
+    border-left-color: var(--color-primary);
+}
+
+.nav-icon {
+    margin-right: 10px;
+    font-size: 16px;
+}
+
+.logout-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 20px;
+    margin: 12px 20px;
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    font-size: 11px;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    gap: 4px;
+    cursor: pointer;
+}
+
+.logout-link:hover {
+    color: #EF4444;
+    border-color: #EF4444;
+    background-color: #FEF2F2;
+}
+
+/* Main Content */
+.main-content {
+    flex: 1;
+    padding: 24px;
+}
+
+.page-header {
+    margin-bottom: 20px;
+}
+
+.page-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 6px 0;
+}
+
+.page-subtitle {
+    color: #6B7280;
+    font-size: 14px;
+    margin: 0;
+}
+
+/* Status Message */
+.status-message {
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    font-weight: 500;
+    font-size: 13px;
+}
+
+.status-success {
+    background-color: var(--color-success-bg);
+    color: var(--color-success-text);
+    border: 1px solid var(--color-success-border);
+}
+
+.status-error {
+    background-color: var(--color-error-bg);
+    color: var(--color-error-text);
+    border: 1px solid var(--color-error-border);
+}
+
+.status-loading {
+    background-color: var(--color-loading-bg);
+    color: var(--color-loading-text);
+    border: 1px solid var(--color-loading-border);
+}
+
+/* 🔥 Botões de Gráficos em Verde */
+.chart-tab {
+    background-color: white;
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border);
+}
+
+.chart-tab:hover {
+    background-color: var(--color-primary) !important;
+    color: white !important;
+    border-color: var(--color-primary) !important;
+}
+
+.chart-tab.active {
+    background-color: var(--color-primary) !important;
+    color: white !important;
+    border-color: var(--color-primary) !important;
+}
+
+.btn-primary {
+    background-color: var(--color-primary) !important;
+    color: white !important;
+    border-color: var(--color-primary) !important;
+}
+
+.btn-primary:hover {
+    background-color: var(--color-primary-hover) !important;
+}
+
+/* Seleção de Texto */
+::selection {
+    background-color: var(--color-primary);
+    color: white;
+}
+
+::-moz-selection {
+    background-color: var(--color-primary);
+    color: white;
+}
+
+/* Section Styles */
+.section {
+    display: none;
+}
+
+.section.active {
+    display: block;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .sidebar {
+        width: 200px;
+    }
+    
+    .main-content {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-container {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+        padding: 16px 0;
+    }
+
+    .main-content {
+        padding: 16px;
+    }
+    
+    .page-title {
+        font-size: 20px;
+    }
+}

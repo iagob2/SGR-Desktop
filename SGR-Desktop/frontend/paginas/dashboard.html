@@ -1,0 +1,91 @@
+<!-- Dashboard Section -->
+<div id="dashboardSection" class="section active">
+    <div class="page-header">
+        <h1 class="page-title">Dashboard</h1>
+        <p class="page-subtitle">Visão geral do sistema de gerenciamento de restaurantes</p>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-label">Total de Vendas</div>
+            <div class="kpi-value" id="faturamento-hoje">R$ 0,00</div>
+            <div class="kpi-growth positive">
+                <span>↗</span>
+                Carregando...
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-label">Produtos Vendidos</div>
+            <div class="kpi-value" id="pedidos-hoje">0</div>
+            <div class="kpi-growth positive">
+                <span>↗</span>
+                Carregando...
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-label">Ticket Médio</div>
+            <div class="kpi-value" id="total-restaurantes">R$ 0,00</div>
+            <div class="kpi-growth positive">
+                <span>↗</span>
+                Carregando...
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-label">Evolução de Vendas</div>
+            <div class="kpi-value" id="pedidos-pendentes">0%</div>
+            <div class="kpi-growth positive">
+                <span>↗</span>
+                Carregando...
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart Section -->
+    <div class="chart-section">
+        <div class="chart-header">
+            <h2 class="chart-title">Análise de Vendas</h2>
+            <div class="chart-tabs">
+                <button class="chart-tab active" onclick="switchTab('vendas')">Vendas</button>
+                <button class="chart-tab" onclick="switchTab('produtos')">Produtos</button>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <canvas id="mainChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Other Sections (hidden by default) -->
+<div id="restaurantesSection" class="section">
+    <div class="page-header">
+        <h1 class="page-title">Restaurantes</h1>
+        <p class="page-subtitle">Gerenciar restaurantes cadastrados</p>
+    </div>
+    <div id="restaurantesList"></div>
+</div>
+
+<div id="pedidosSection" class="section">
+    <div class="page-header">
+        <h1 class="page-title">Pedidos</h1>
+        <p class="page-subtitle">Gerenciar pedidos do sistema</p>
+    </div>
+    <div id="pedidosList"></div>
+</div>
+
+<div id="vendasSection" class="section">
+    <div class="page-header">
+        <h1 class="page-title">Vendas</h1>
+        <p class="page-subtitle">Análise de vendas e faturamento</p>
+    </div>
+    <div id="vendasContent"></div>
+</div>
+
+
+<!-- 🔥 SCRIPT PRINCIPAL: Carregado via executeScriptsFromHTML para evitar concorrência -->
+<script src="js/dashboard.js"></script>
+</div>

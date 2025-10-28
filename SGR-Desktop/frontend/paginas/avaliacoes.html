@@ -1,0 +1,114 @@
+<!-- Dashboard de Avaliações Section -->
+<div id="avaliacoesSection" class="section active">
+    <div class="page-header">
+        <h1 class="page-title">Avaliações</h1>
+        <p class="page-subtitle">Sistema completo de monitoramento e análise</p>
+    </div>
+
+    <!-- KPIs com Alertas Visuais -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <!-- Avaliação Média -->
+        <div id="avgRatingCard" class="p-6 rounded-xl shadow-lg border-l-4">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold">Avaliação Média</h3>
+                <span id="avgRatingIcon" class="text-2xl"></span>
+            </div>
+            <div class="flex items-baseline">
+                <span id="avgRatingValue" class="text-5xl font-bold">3.2</span>
+                <span class="text-2xl opacity-80 ml-1">/5.0</span>
+            </div>
+            <div id="avgRatingBadge" class="mt-3"></div>
+        </div>
+
+        <!-- Avaliações Positivas -->
+        <div id="positiveCard" class="p-6 rounded-xl shadow-lg border-2">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold">Avaliações Positivas</h3>
+                <span id="trendIcon" class="text-xl">→</span>
+            </div>
+            <div class="flex items-baseline">
+                <span id="positiveValue" class="text-4xl font-bold">50%</span>
+            </div>
+            <p class="text-sm opacity-75 mt-2">≥ 4 estrelas</p>
+        </div>
+
+        <!-- Total de Avaliações -->
+        <div class="bg-gray-100 p-6 rounded-xl shadow-lg">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">Total de Avaliações</h3>
+                <span class="text-2xl">💬</span>
+            </div>
+            <div class="flex items-baseline">
+                <span class="text-4xl font-bold text-gray-800">247</span>
+            </div>
+            <p class="text-sm text-gray-600 mt-2">nos últimos 30 dias</p>
+        </div>
+    </div>
+
+    <!-- Sistema de Filtros -->
+    <div class="bg-white p-6 rounded-xl shadow-lg mb-6">
+        <div class="flex flex-wrap gap-4 items-center justify-between">
+            <!-- Lado Esquerdo - Filtros -->
+            <div class="flex flex-wrap gap-4 items-center">
+                <div class="flex-1 min-w-64">
+                    <div class="relative">
+                        <input 
+                            type="text" 
+                            id="searchInput"
+                            placeholder="Pesquisar por cliente ou comentário..."
+                            class="w-full pl-4 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                            <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <select id="ratingFilter" class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <option value="">Todas as notas</option>
+                    <option value="5">⭐⭐⭐⭐⭐ (5 estrelas)</option>
+                    <option value="4">⭐⭐⭐⭐ (4 estrelas)</option>
+                    <option value="3">⭐⭐⭐ (3 estrelas)</option>
+                    <option value="2">⭐⭐ (2 estrelas)</option>
+                    <option value="1">⭐ (1 estrela)</option>
+                </select>
+                
+                <button onclick="clearFilters()" class="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">
+                    Limpar Filtros
+                </button>
+            </div>
+            
+            <!-- Lado Direito - Botão de Alternância -->
+            <div class="flex items-center space-x-4">
+                <button id="toggleViewBtn" class="bg-green-500 hover:bg-green-600 text-white font-semibold px-4 py-2 rounded-lg transition-colors">
+                    Mostrar Avaliações de Prato
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabela de Avaliações -->
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead id="avaliacoesTableHead" class="bg-gray-50">
+                    <tr>
+                        <th class="w-[10%] px-4 py-4 text-left text-sm font-semibold text-gray-700">Data</th>
+                        <th class="w-[15%] px-4 py-4 text-left text-sm font-semibold text-gray-700">Cliente</th>
+                        <th class="w-[15%] px-4 py-4 text-left text-sm font-semibold text-gray-700">Prato</th>
+                        <th class="w-[45%] px-4 py-4 text-left text-sm font-semibold text-gray-700">Comentário</th>
+                        <th class="w-[15%] px-4 py-4 text-center text-sm font-semibold text-gray-700">Nota</th>
+                    </tr>
+                </thead>
+                <tbody id="avaliacoesTableBody" class="divide-y divide-gray-200">
+                    <!-- Reviews will be populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 🔥 SCRIPT PRINCIPAL: Carregado via executeScriptsFromHTML para evitar concorrência -->
+<script src="js/avaliacoes.js"></script>
