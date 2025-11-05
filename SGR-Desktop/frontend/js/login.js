@@ -65,11 +65,45 @@ async function handleLogin(email, senha) {
 
         if (data.status === 'success') {
             // Armazenar ID do restaurante no localStorage
-            const restauranteId = data.data.restaurante_id;
-            const restauranteNome = data.data.restaurante_nome;
+            const restauranteId = data.data?.restaurante_id;
+            const restauranteNome = data.data?.restaurante_nome;
+            
+            // Se não tem ID, tentar buscar via API adicional
+            if (!restauranteId) {
+                console.warn('⚠️ restaurante_id não encontrado na resposta, tentando buscar...');
+                try {
+                    // Tentar buscar informações do restaurante logado
+                    const perfilResponse = await fetch(`${API_BASE_URL}/restaurantes/perfil`, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    if (perfilResponse.ok) {
+                        const perfilData = await perfilResponse.json();
+                        if (perfilData.data?.restaurante_id) {
+                            localStorage.setItem('restaurante_id', perfilData.data.restaurante_id);
+                            localStorage.setItem('restaurante_nome', perfilData.data.restaurante_nome || restauranteNome || 'Restaurante');
+                            localStorage.setItem('authenticated', 'true');
+                            setTimeout(() => {
+                                window.location.href = '../index.html';
+                            }, 100);
+                            return;
+                        }
+                    }
+                } catch (e) {
+                    console.error('Erro ao buscar perfil:', e);
+                }
+                
+                // Se não conseguiu buscar, mostrar erro
+                showError('Login realizado, mas não foi possível obter informações do restaurante. Tente novamente.');
+                setLoading(false);
+                return;
+            }
             
             localStorage.setItem('restaurante_id', restauranteId);
-            localStorage.setItem('restaurante_nome', restauranteNome);
+            localStorage.setItem('restaurante_nome', restauranteNome || 'Restaurante');
             localStorage.setItem('authenticated', 'true');
             
             

@@ -74,15 +74,40 @@ async function apiRequest(endpoint, options = {}) {
 async function carregarAvaliacoes(isPrato) {
     // 🔥 CORREÇÃO: Usar variável restaurante_id diretamente
     const restauranteId = window.restaurante_id;
-    let endpoint = `/avaliacoes/${restauranteId}`; // Rota de Avaliação Geral
+    let endpoint = `/avaliacoes/${restauranteId}`; // Rota de avaliações (igual ao site que funciona)
     if (isPrato) {
         endpoint = `/avaliacoes/pratos/${restauranteId}`; // Nova Rota de Avaliação de Prato
     }
 
     try {
         console.log(`🔄 Carregando ${isPrato ? 'avaliações de pratos' : 'avaliações gerais'}`);
+        console.log(`🔗 Endpoint completo: ${window.API_BASE_URL}${endpoint}`);
+        console.log(`🆔 Restaurante ID: ${restauranteId}`);
         
-        const response = await fetch(`${API_BASE_URL}${endpoint}`);
+        const response = await fetch(`${window.API_BASE_URL}${endpoint}`);
+        
+        console.log(`📡 Status HTTP: ${response.status}`);
+        console.log(`📋 Headers:`, [...response.headers.entries()]);
+        
+        // Verificar status HTTP primeiro
+        if (response.status === 401 || response.status === 403) {
+            console.error('❌ ERRO DE AUTENTICAÇÃO: Redirecionando para login...');
+            alert('Sua sessão expirou. Redirecionando para login...');
+            localStorage.removeItem('authenticated');
+            localStorage.removeItem('restaurante_id');
+            localStorage.removeItem('restaurante_nome');
+            window.location.href = '../paginas/login.html';
+            return;
+        }
+        
+        // Verificar se a resposta é JSON válido
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text();
+            console.error('❌ Resposta não é JSON:', text.substring(0, 200));
+            throw new Error(`Resposta inválida da API: ${response.status} ${response.statusText}`);
+        }
+        
         const data = await response.json();
 
         // 🔥 VERIFICAÇÃO CRÍTICA - Log completo da resposta
@@ -90,65 +115,130 @@ async function carregarAvaliacoes(isPrato) {
         console.log('✅ Status da resposta:', data.status);
         console.log('✅ Dados recebidos:', data.data);
 
-        if (data.status === 'success' && data.data) {
-            // Armazenar dados reais da API
-            const avaliacoesRecebidas = data.data.avaliacoes || [];
-            const resumoRecebido = data.data.resumo || { media_notas: 0, total_avaliacoes: 0 };
-            
+        // A API pode retornar:
+        // 1. Array direto: [{...}, {...}] (como o site funciona)
+        // 2. Objeto com status: {status: 'success', data: [...]}
+        // 3. Objeto com data: {data: [...]}
+        let avaliacoesRecebidas = [];
+        let resumoRecebido = { media_notas: 0, total_avaliacoes: 0 };
+        
+        // Verificar se é array direto
+        if (Array.isArray(data)) {
+            avaliacoesRecebidas = data;
+            console.log('✅ Resposta é array direto');
+        }
+        // Verificar se tem estrutura com status
+        else if (data.status === 'success') {
+            if (isPrato) {
+                // Avaliações de pratos: estrutura normal com data.data.avaliacoes
+                avaliacoesRecebidas = data.data?.avaliacoes || data.data || [];
+                if (!Array.isArray(avaliacoesRecebidas)) {
+                    avaliacoesRecebidas = avaliacoesRecebidas.avaliacoes || [];
+                }
+                resumoRecebido = data.data?.resumo || { 
+                    media_notas: 0, 
+                    total_avaliacoes: Array.isArray(avaliacoesRecebidas) ? avaliacoesRecebidas.length : 0 
+                };
+                console.log('📊 Avaliações de pratos extraídas:', avaliacoesRecebidas.length);
+            } else {
+                // Avaliações gerais: pode estar em data.data ou data diretamente
+                avaliacoesRecebidas = data.data || data.avaliacoes || [];
+                if (!Array.isArray(avaliacoesRecebidas)) {
+                    avaliacoesRecebidas = avaliacoesRecebidas.avaliacoes || [];
+                }
+            }
+        }
+        // Verificar se tem data direto
+        else if (data.data) {
+            if (isPrato) {
+                // Para pratos, pode estar em data.data.avaliacoes ou data.data direto
+                avaliacoesRecebidas = Array.isArray(data.data) ? data.data : (data.data.avaliacoes || []);
+            } else {
+                avaliacoesRecebidas = Array.isArray(data.data) ? data.data : (data.data.avaliacoes || []);
+            }
+        }
+        // Verificar se tem avaliacoes diretamente
+        else if (data.avaliacoes && Array.isArray(data.avaliacoes)) {
+            avaliacoesRecebidas = data.avaliacoes;
+        }
+        
+        // Calcular média e total
+        if (isPrato) {
+            // Para avaliações de pratos, calcular resumo se não vier
+            if (avaliacoesRecebidas.length > 0 && (!resumoRecebido || resumoRecebido.total_avaliacoes === 0)) {
+                const somaNotas = avaliacoesRecebidas.reduce((sum, a) => sum + (Number(a.nota) || 0), 0);
+                resumoRecebido = {
+                    media_notas: somaNotas / avaliacoesRecebidas.length,
+                    total_avaliacoes: avaliacoesRecebidas.length
+                };
+            } else if (!resumoRecebido) {
+                resumoRecebido = { media_notas: 0, total_avaliacoes: avaliacoesRecebidas.length };
+            }
+        } else {
+            // Para avaliações gerais
+            if (avaliacoesRecebidas.length > 0) {
+                const somaNotas = avaliacoesRecebidas.reduce((sum, a) => sum + (Number(a.nota) || 0), 0);
+                resumoRecebido = {
+                    media_notas: somaNotas / avaliacoesRecebidas.length,
+                    total_avaliacoes: avaliacoesRecebidas.length
+                };
+            }
+        }
+        
+        // Sempre processar, mesmo se vazio (para mostrar mensagem de estado vazio)
+        // Verificar se temos dados válidos ou se é uma resposta de sucesso
+        const deveProcessar = avaliacoesRecebidas.length > 0 || 
+                              data.status === 'success' || 
+                              Array.isArray(data) || 
+                              (isPrato && data.data !== undefined) ||
+                              (isPrato && response.status === 200);
+        
+        if (deveProcessar || avaliacoesRecebidas.length === 0) {
             // 🔥 VERIFICAÇÃO CRÍTICA - Estrutura dos dados
-            console.log('📊 Avaliações recebidas:', avaliacoesRecebidas);
+            console.log('📊 Avaliações recebidas (antes normalização):', avaliacoesRecebidas);
             console.log('📈 Resumo recebido:', resumoRecebido);
             console.log('🔍 Quantidade de avaliações:', avaliacoesRecebidas.length);
+            
+            // Normalizar estrutura das avaliações (o site usa cliente.nome, dataAvaliacao)
+            if (Array.isArray(avaliacoesRecebidas)) {
+                avaliacoesRecebidas = avaliacoesRecebidas.map(a => {
+                    // Normalizar estrutura para o formato esperado pelo frontend
+                    // O site usa: cliente.nome, dataAvaliacao, nota, comentario
+                    return {
+                        nota: a.nota || a.rating || 0,
+                        comentario: a.comentario || a.comment || '',
+                        cliente_nome: a.cliente?.nome || a.cliente_nome || (typeof a.cliente === 'string' ? a.cliente : 'Cliente'),
+                        data_avaliacao: a.dataAvaliacao || a.data_avaliacao || a.data || '',
+                        nome_prato: a.nome_prato || a.prato?.nome || (isPrato ? 'Prato' : '') // Para avaliações de pratos
+                    };
+                });
+            } else {
+                avaliacoesRecebidas = [];
+            }
+
+            console.log('📊 Avaliações normalizadas:', avaliacoesRecebidas);
 
             apiReviews = avaliacoesRecebidas;
             apiResumo = resumoRecebido;
 
-            // Se não há dados e estamos em modo prato, usar dados mock
-            if (apiReviews.length === 0 && isPrato) {
-                console.warn('⚠️ AVISO: Nenhuma avaliação de prato encontrada para o restaurante', restauranteId);
-                console.log('🔄 Usando dados mock para avaliações de pratos');
-                apiReviews = [
-                    {
-                        id: 1,
-                        nota: 5.0,
-                        comentario: 'Excelente prato! O sabor estava perfeito e a apresentação impecável.',
-                        data_avaliacao: '2024-12-15T14:30:00',
-                        cliente_nome: 'Maria Silva',
-                        nome_prato: 'Hambúrguer Clássico'
-                    },
-                    {
-                        id: 2,
-                        nota: 4.0,
-                        comentario: 'Muito bom! Ingredientes frescos e bem preparados.',
-                        data_avaliacao: '2024-12-14T19:45:00',
-                        cliente_nome: 'João Santos',
-                        nome_prato: 'Pizza Margherita'
-                    },
-                    {
-                        id: 3,
-                        nota: 3.0,
-                        comentario: 'Regular, nada especial mas também não ruim.',
-                        data_avaliacao: '2024-12-13T12:15:00',
-                        cliente_nome: 'Ana Costa',
-                        nome_prato: 'Sushi Salmão'
-                    }
-                ];
-                apiResumo = { media_notas: 4.0, total_avaliacoes: 3 };
-                showStatus('Dados de demonstração carregados para avaliações de pratos!', 'success');
-            } else if (apiReviews.length === 0) {
+            // Mostrar mensagem apropriada
+            if (apiReviews.length === 0) {
                 console.warn(`⚠️ AVISO: Nenhuma avaliação encontrada para ${isPrato ? 'pratos' : 'restaurante'} ${restauranteId}`);
-                showStatus(`Restaurante ${restauranteId} não possui ${isPrato ? 'avaliações de pratos' : 'avaliações'} ainda.`, 'warning');
+                showStatus(`Restaurante ainda não possui ${isPrato ? 'avaliações de pratos' : 'avaliações'}.`, 'info');
             } else {
                 showStatus(`${apiReviews.length} avaliação(ões) carregada(s) com sucesso!`, 'success');
                 console.log(`✅ Avaliações carregadas com sucesso:`, apiReviews);
             }
 
-            // Chamadas com os dados (reais ou mock)
+            // Chamadas com os dados reais (vazios se não houver)
             renderizarTabela(apiReviews, isPrato);
             updateKPIs(apiResumo);
         } else {
-            console.error('❌ Falha na resposta da API (avaliações):', data.message);
-            showStatus(`Erro da API: ${data.message}`, 'error');
+            const errorMsg = data.message || data.error || 'Erro desconhecido da API';
+            console.error('❌ Falha na resposta da API (avaliações):', errorMsg);
+            console.error('❌ Resposta completa:', data);
+            showStatus(`Erro da API: ${errorMsg}`, 'error');
+            // Mostrar estado vazio em caso de erro
             apiReviews = [];
             apiResumo = { media_notas: 0, total_avaliacoes: 0 };
             renderizarTabela([], isPrato);
@@ -189,6 +279,11 @@ function truncateText(text, maxLength) {
 
 // Função para atualizar KPIs usando resumo da API
 function updateKPIs(resumo) {
+    // Verificar se resumo existe
+    if (!resumo) {
+        resumo = { media_notas: 0, total_avaliacoes: 0 };
+    }
+    
     // Usar os dados do resumo diretamente da API
     const avgRating = resumo.media_notas || 0;
     const totalReviews = resumo.total_avaliacoes || 0;
@@ -197,11 +292,17 @@ function updateKPIs(resumo) {
     const positiveReviews = apiReviews.filter(review => review.nota >= 4).length;
     const positivePercentage = (totalReviews > 0) ? (positiveReviews / totalReviews) * 100 : 0;
 
-    // Atualizar Avaliação Média
+    // Atualizar Avaliação Média - VERIFICAR SE ELEMENTOS EXISTEM
     const avgCard = document.getElementById('avgRatingCard');
     const avgIcon = document.getElementById('avgRatingIcon');
     const avgValue = document.getElementById('avgRatingValue');
     const avgBadge = document.getElementById('avgRatingBadge');
+    
+    // Se elementos não existem, retornar sem erro
+    if (!avgCard || !avgIcon || !avgValue || !avgBadge) {
+        console.warn('⚠️ Elementos de KPI não encontrados');
+        return;
+    }
 
     avgValue.textContent = avgRating.toFixed(1);
 
@@ -228,9 +329,14 @@ function updateKPIs(resumo) {
         avgBadge.innerHTML = '<span class="bg-red-200 text-red-800 px-3 py-1 rounded-full text-sm font-medium">AÇÃO URGENTE</span>';
     }
 
-    // Atualizar Avaliações Positivas
+    // Atualizar Avaliações Positivas - VERIFICAR SE ELEMENTOS EXISTEM
     const positiveCard = document.getElementById('positiveCard');
     const positiveValue = document.getElementById('positiveValue');
+    
+    if (!positiveCard || !positiveValue) {
+        console.warn('⚠️ Elementos de avaliações positivas não encontrados');
+        return;
+    }
 
     positiveValue.textContent = Math.round(positivePercentage) + '%';
 
@@ -264,6 +370,12 @@ function renderizarTabela(avaliacoes, isPrato) {
     const thead = document.getElementById('avaliacoesTableHead');
     const tbody = document.getElementById('avaliacoesTableBody');
 
+    // Verificar se elementos existem antes de usar
+    if (!thead || !tbody) {
+        console.error('❌ ERRO: Elementos da tabela não encontrados (thead ou tbody)');
+        return;
+    }
+
     // 1. ATUALIZAR CABEÇALHO (THEAD)
     let headerHTML = `
         <th class="w-[10%] px-4 py-4 text-left text-sm font-semibold text-gray-700">Data</th>
@@ -281,6 +393,28 @@ function renderizarTabela(avaliacoes, isPrato) {
 
     // 2. PREENCHER CORPO (TBODY)
     tbody.innerHTML = '';
+    
+    // Se não há avaliações, mostrar mensagem de estado vazio
+    if (!avaliacoes || avaliacoes.length === 0) {
+        const emptyMessage = isPrato 
+            ? 'Nenhuma avaliação de pratos encontrada ainda.'
+            : 'Nenhuma avaliação encontrada ainda.';
+        
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="${isPrato ? 5 : 4}" class="px-4 py-8 text-center text-gray-500">
+                    <div class="flex flex-col items-center">
+                        <svg class="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <p class="text-lg font-medium">${emptyMessage}</p>
+                        <p class="text-sm text-gray-400 mt-2">Quando houver avaliações, elas aparecerão aqui.</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
     
     avaliacoes.forEach(avaliacao => {
         const row = document.createElement('tr');

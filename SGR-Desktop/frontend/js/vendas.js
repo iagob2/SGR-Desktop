@@ -82,9 +82,10 @@ async function carregarVendas() {
     } catch (error) {
         showStatus(`Erro ao carregar vendas: ${error.message}`, 'error');
         
-        // Em caso de erro, usar dados mock
-        usarDadosMockPeriodo('semanal');
-        usarDadosMockProdutos('semanal');
+        // NÃO usar dados mock - mostrar gráficos vazios
+        atualizarGraficoVazio();
+        atualizarTopProdutosVazio();
+        showStatus('Sem dados de vendas disponíveis', 'warning');
     }
 }
 
@@ -101,10 +102,18 @@ async function carregarTopProdutos(periodo) {
         if (produtosData.status === 'success') {
             const dados = produtosData.data;
             
-            // Atualizar interface com dados dos produtos
-            atualizarTopProdutos(dados);
+            // Verificar se há produtos reais (não vazios)
+            const hasProducts = dados && dados.produtos && Array.isArray(dados.produtos) && dados.produtos.length > 0;
             
-            showStatus(`Top produtos ${periodo} carregados!`, 'success');
+            if (hasProducts) {
+                // Atualizar interface com dados dos produtos
+                atualizarTopProdutos(dados);
+                showStatus(`Top produtos ${periodo} carregados!`, 'success');
+            } else {
+                // Sem produtos - mostrar estado vazio
+                atualizarTopProdutosVazio();
+                showStatus(`Carregado com sucesso. Ainda não há produtos vendidos no período ${periodo}.`, 'info');
+            }
         } else {
             throw new Error(produtosData.message || 'Erro ao carregar dados');
         }
@@ -112,8 +121,8 @@ async function carregarTopProdutos(periodo) {
     } catch (error) {
         showStatus(`Erro ao carregar top produtos ${periodo}`, 'error');
         
-        // Em caso de erro, usar dados mock
-        usarDadosMockProdutos(periodo);
+        // NÃO usar dados mock - mostrar estado vazio
+        atualizarTopProdutosVazio();
     }
 }
 
@@ -133,11 +142,12 @@ function atualizarTopProdutos(dados) {
         
         produtos.forEach((produto, index) => {
             const rankClass = `rank-${produto.posicao}`;
-            const valorUnitario = produto.valor_unitario.toLocaleString('pt-BR', {
+            // CORREÇÃO: Tentar diferentes nomes de campos (backend pode retornar variações)
+            const valorUnitario = (produto.valor_unitario || produto.valorUnitario || produto.preco_unitario || 0).toLocaleString('pt-BR', {
                 style: 'currency',
                 currency: 'BRL'
             });
-            const valorTotal = produto.valor_total_vendas.toLocaleString('pt-BR', {
+            const valorTotal = (produto.valor_total_vendas || produto.valorTotalVendas || produto.total_vendas || 0).toLocaleString('pt-BR', {
                 style: 'currency',
                 currency: 'BRL'
             });
@@ -187,93 +197,6 @@ function switchTopProdutosTab(tab) {
     carregarTopProdutos(tab);
 }
 
-// Função para usar dados mock dos produtos em caso de erro
-function usarDadosMockProdutos(periodo) {
-    const mockData = {
-        semanal: {
-            periodo: 'semanal',
-            produtos: [
-                {
-                    posicao: 1,
-                    nome: 'Hambúrguer Clássico',
-                    valor_unitario: 25.90,
-                    quantidade_vendida: 15,
-                    valor_total_vendas: 388.50
-                },
-                {
-                    posicao: 2,
-                    nome: 'Pizza Margherita',
-                    valor_unitario: 35.00,
-                    quantidade_vendida: 12,
-                    valor_total_vendas: 420.00
-                },
-                {
-                    posicao: 3,
-                    nome: 'Sushi Salmão',
-                    valor_unitario: 45.00,
-                    quantidade_vendida: 8,
-                    valor_total_vendas: 360.00
-                }
-            ]
-        },
-        mensal: {
-            periodo: 'mensal',
-            produtos: [
-                {
-                    posicao: 1,
-                    nome: 'Hambúrguer Clássico',
-                    valor_unitario: 25.90,
-                    quantidade_vendida: 65,
-                    valor_total_vendas: 1683.50
-                },
-                {
-                    posicao: 2,
-                    nome: 'Pizza Margherita',
-                    valor_unitario: 35.00,
-                    quantidade_vendida: 52,
-                    valor_total_vendas: 1820.00
-                },
-                {
-                    posicao: 3,
-                    nome: 'Sushi Salmão',
-                    valor_unitario: 45.00,
-                    quantidade_vendida: 38,
-                    valor_total_vendas: 1710.00
-                }
-            ]
-        },
-        anual: {
-            periodo: 'anual',
-            produtos: [
-                {
-                    posicao: 1,
-                    nome: 'Hambúrguer Clássico',
-                    valor_unitario: 25.90,
-                    quantidade_vendida: 780,
-                    valor_total_vendas: 20202.00
-                },
-                {
-                    posicao: 2,
-                    nome: 'Pizza Margherita',
-                    valor_unitario: 35.00,
-                    quantidade_vendida: 624,
-                    valor_total_vendas: 21840.00
-                },
-                {
-                    posicao: 3,
-                    nome: 'Sushi Salmão',
-                    valor_unitario: 45.00,
-                    quantidade_vendida: 456,
-                    valor_total_vendas: 20520.00
-                }
-            ]
-        }
-    };
-    
-    const dados = mockData[periodo] || mockData.semanal;
-    atualizarTopProdutos(dados);
-    showStatus(`Usando dados mock para ${periodo}`, 'loading');
-}
 
 // 🔥 CORREÇÃO CRÍTICA: Usar var para evitar redeclaração (principal causa do SyntaxError)
 var vendasChartData = {
@@ -490,11 +413,22 @@ async function carregarDadosPeriodo(periodo) {
         if (vendasData.status === 'success') {
             const dados = vendasData.data;
             
-            // Atualizar gráfico com dados específicos do período
-            atualizarGraficoPeriodo(dados);
+            // Verificar se há dados reais (não vazios)
+            const hasData = dados && (
+                (dados.vendas && dados.vendas.length > 0 && dados.vendas.some(v => v > 0)) ||
+                (dados.produtos && dados.produtos.length > 0 && dados.produtos.some(p => p > 0))
+            );
             
-            showStatus(`Dados ${periodo} carregados!`, 'success');
-            console.log(`✅ Dados ${periodo} carregados:`, dados);
+            if (hasData) {
+                // Atualizar gráfico com dados reais
+                atualizarGraficoPeriodo(dados);
+                showStatus(`Dados ${periodo} carregados!`, 'success');
+                console.log(`✅ Dados ${periodo} carregados:`, dados);
+            } else {
+                // Dados vazios - mostrar gráfico vazio
+                atualizarGraficoVazio();
+                showStatus(`Carregado com sucesso. Ainda não há vendas no período ${periodo}.`, 'info');
+            }
         } else {
             throw new Error(vendasData.message || 'Erro ao carregar dados');
         }
@@ -503,8 +437,9 @@ async function carregarDadosPeriodo(periodo) {
         console.error(`Erro ao carregar dados ${periodo}:`, error);
         showStatus(`Erro ao carregar dados ${periodo}`, 'error');
         
-        // Em caso de erro, usar dados mock
-        usarDadosMockPeriodo(periodo);
+        // NÃO usar dados mock - mostrar gráfico vazio
+        atualizarGraficoVazio();
+        showStatus('Sem dados de vendas para exibir', 'info');
     }
 }
 
@@ -542,31 +477,41 @@ function atualizarGraficoPeriodo(dados) {
     });
 }
 
-// Função para usar dados mock em caso de erro
-function usarDadosMockPeriodo(periodo) {
-    if (!vendasChart) return;
+// Função para mostrar gráfico vazio (sem dados)
+function atualizarGraficoVazio() {
+    if (!window.vendasChart) return;
     
-    const mockData = {
-        semanal: {
-            labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'],
-            vendas: [100, 150, 200, 180],
-            produtos: [5, 8, 12, 10]
-        },
-        mensal: {
-            labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'],
-            vendas: [500, 600, 700, 650, 750, 800],
-            produtos: [25, 30, 35, 32, 38, 40]
-        },
-        anual: {
-            labels: ['2020', '2021', '2022', '2023', '2024'],
-            vendas: [5000, 6000, 7000, 8000, 9000],
-            produtos: [250, 300, 350, 400, 450]
-        }
+    const emptyData = {
+        labels: [],
+        vendas: [],
+        produtos: []
     };
     
-    const dados = mockData[periodo] || mockData.semanal;
-    atualizarGraficoPeriodo(dados);
+    atualizarGraficoPeriodo(emptyData);
+    console.log('📊 Gráfico atualizado com dados vazios');
 }
+
+// Função para mostrar top produtos vazio
+function atualizarTopProdutosVazio() {
+    const container = document.getElementById('topProductsTable');
+    if (!container) return;
+    
+    container.innerHTML = `
+        <tr>
+            <td colspan="5" class="px-4 py-8 text-center text-gray-500">
+                <div class="flex flex-col items-center">
+                    <svg class="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    <p class="text-lg font-medium">Sem dados de vendas</p>
+                    <p class="text-sm text-gray-400 mt-2">Comece a vender para ver seus produtos mais vendidos aqui.</p>
+                </div>
+            </td>
+        </tr>
+    `;
+}
+
+
 
 
 // ✅ CORREÇÃO: Criar função de inicialização com proteções para DOM

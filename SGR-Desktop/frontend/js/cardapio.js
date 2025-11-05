@@ -1,31 +1,19 @@
 // cardapio.js - Funcionalidades específicas da página de Cardápio
 
-// 🔥 REFATORAÇÃO: Usar window.variavel para evitar redeclaração
 window.API_BASE_URL = 'http://localhost:5000/api';
-
-// 🛑 CORREÇÃO CRÍTICA: Obter ID do localStorage sem fallback
 window.restauranteIdStringCardapio = localStorage.getItem('restaurante_id');
 window.restaurante_id = parseInt(window.restauranteIdStringCardapio, 10);
 
-console.log('🔍 ID do restaurante (cardapio):', window.restauranteIdStringCardapio, '-> parsed:', window.restaurante_id);
-
-// Verificar se o ID é válido
 if (!window.restaurante_id || isNaN(window.restaurante_id)) {
-    console.error('❌ ERRO CRÍTICO: ID do restaurante inválido no cardápio!');
-    console.error('❌ localStorage restaurante_id:', window.restauranteIdStringCardapio);
+    console.error('ID do restaurante inválido no cardápio!');
     alert('Erro: Sessão inválida. Redirecionando para login...');
     window.location.href = '../paginas/login.html';
 }
 
-// ID já obtido e validado no topo do arquivo - usar variável restaurante_id diretamente
-
-// Variáveis globais
-// 🔥 CORREÇÃO CRÍTICA: Usar var para evitar redeclaração (SyntaxError)
 var dishes = [];
 var selectedDishes = new Set();
-var currentEditId = null; // Para controlar se estamos editando um item
+var currentEditId = null;
 
-// 🎯 FUNÇÕES DO MODAL
 function abrirModal(modo = 'novo', itemId = null) {
     const modal = document.getElementById('modalForm');
     const modalTitle = document.getElementById('modalTitle');
@@ -84,7 +72,6 @@ function validarFormulario(dados) {
     return true;
 }
 
-// 🎯 FUNÇÃO CRÍTICA: Rastreia o ID do item selecionado na tabela
 function getSelectedItemId() {
     // Retorna o ID do item que está com a checkbox marcada
     const checkedBoxes = document.querySelectorAll('input[name="item_select"]:checked');
@@ -95,7 +82,6 @@ function getSelectedItemId() {
     return null; 
 }
 
-// 🎯 LÓGICA: Controla o estado dos botões de Editar/Deletar
 function updateButtonStates() {
     const selectedCount = document.querySelectorAll('input[name="item_select"]:checked').length;
     const btnEditar = document.getElementById('btnEditar');
@@ -151,69 +137,81 @@ async function carregarTabela() {
     try {
         showStatus('Carregando cardápio...', 'loading');
         
-        // 🔥 CORREÇÃO: Usar variável restaurante_id diretamente
-        console.log(`🍽️ Carregando cardápio do restaurante ${window.restaurante_id}`);
-        
-        // 🔥 CORREÇÃO: Adicionar prefixo /cardapio na URL
         const response = await fetch(`${window.API_BASE_URL}/cardapio/${window.restaurante_id}`);
         const cardapioData = await response.json();
-        
-        // 🔥 VERIFICAÇÃO CRÍTICA - Log completo da resposta
-        console.log('✅ Resposta completa da API (cardápio):', cardapioData);
-        console.log('✅ Status da resposta:', cardapioData.status);
-        console.log('✅ Dados recebidos:', cardapioData.data);
         
         if (cardapioData.status === 'success') {
             const dadosCardapio = cardapioData.data || [];
             
-            // 🔥 VERIFICAÇÃO CRÍTICA - Estrutura dos dados
-            console.log('🍽️ Pratos recebidos:', dadosCardapio);
-            console.log('🔍 Quantidade de pratos:', dadosCardapio.length);
-            
             if (dadosCardapio.length === 0) {
-                console.warn('⚠️ AVISO: Nenhum prato encontrado para o restaurante', restauranteId);
-                showStatus(`Restaurante ${restauranteId} não possui pratos cadastrados ainda.`, 'warning');
-                
-                // Exibir tabela vazia em vez de quebrar
+                showStatus('Cardápio carregado. Adicione seu primeiro prato!', 'info');
                 dishes = [];
                 renderTable([]);
             } else {
-                dishes = dadosCardapio;
+                dishes = dadosCardapio.filter(item => {
+                    if (!item || !item.id || !item.nome) {
+                        return false;
+                    }
+                    const itemRestId = item.restaurante_id || (item.restaurante && item.restaurante.id);
+                    if (itemRestId && itemRestId !== window.restaurante_id) {
+                        return false;
+                    }
+                    return true;
+                });
+                
                 renderTable(dishes);
                 showStatus(`Cardápio carregado: ${dishes.length} pratos`, 'success');
-                console.log(`✅ Cardápio carregado com sucesso:`, dishes);
             }
             
-            atualizarKPIs();
             
         } else {
-            console.error('❌ Falha na resposta da API (cardápio):', cardapioData.message);
             throw new Error(cardapioData.message || 'Erro ao carregar cardápio');
         }
         
     } catch (error) {
-        console.error('❌ ERRO FATAL na requisição do cardápio:', error);
-        console.error('❌ Stack trace:', error.stack);
+        console.error('Erro ao carregar cardápio:', error);
         showStatus(`Erro ao carregar cardápio: ${error.message}`, 'error');
-        
-        // Em caso de erro, usar dados mock
-        console.log('🔄 Carregando dados mock como fallback...');
-        usarDadosMock();
+        dishes = [];
+        renderTable([]);
+        updateButtonStates();
+        atualizarKPIs();
     }
     
     updateButtonStates(); // Atualiza o estado dos botões após carregar a tabela
 }
 
-// Atualizar KPIs com dados reais (função desabilitada - KPIs removidos)
-function atualizarKPIs() {
-    // KPIs removidos da interface - função mantida para compatibilidade
-    console.log('📊 KPIs removidos da interface');
-}
-
 // Função para renderizar a tabela com nova estrutura
 function renderTable(filteredDishes = dishes) {
     const tbody = document.getElementById('dishesTable');
+    
+    // Verificar se elemento existe
+    if (!tbody) {
+        console.error('ERRO: Elemento dishesTable não encontrado');
+        return;
+    }
+    
     tbody.innerHTML = '';
+    
+    // Se não há pratos, mostrar mensagem de estado vazio
+    if (!filteredDishes || filteredDishes.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5" class="px-6 py-12 text-center">
+                    <div class="flex flex-col items-center">
+                        <svg class="w-20 h-20 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                        </svg>
+                        <h3 class="text-lg font-semibold text-gray-700 mb-2">Cardápio Vazio</h3>
+                        <p class="text-sm text-gray-500 mb-4">Seu restaurante ainda não possui pratos cadastrados.</p>
+                        <button onclick="abrirModalAdicionar()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+                            Adicionar Primeiro Prato
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
 
     filteredDishes.forEach(dish => {
         const isSelected = selectedDishes.has(dish.id);
@@ -348,53 +346,125 @@ async function salvarPrato() {
 
 // Função para adicionar prato via API
 async function adicionarPratoAPI(dados) {
-    // 🔥 CORREÇÃO: Usar variável restaurante_id diretamente
+    // Validar restaurante_id
+    if (!window.restaurante_id || isNaN(window.restaurante_id)) {
+        throw new Error('ID do restaurante inválido. Faça login novamente.');
+    }
+    
+    // Validar dados antes de enviar
+    if (!dados.nome || !dados.nome.trim()) {
+        throw new Error('Nome do prato é obrigatório');
+    }
+    
+    if (!dados.preco || isNaN(dados.preco) || dados.preco <= 0) {
+        throw new Error('Preço deve ser um valor válido maior que zero');
+    }
+    
+    // Preparar dados para envio
     const novoPrato = {
         restaurante_id: window.restaurante_id,
-        nome: dados.nome,
-        descricao: dados.descricao || 'Sem descrição',
-        preco: dados.preco,
-        imagemUrl: dados.imagemUrl
+        nome: dados.nome.trim(),
+        descricao: (dados.descricao || '').trim() || 'Sem descrição',
+        preco: parseFloat(dados.preco),
+        imagemUrl: (dados.imagemUrl || '').trim() || null
     };
     
-    // 🔥 CORREÇÃO: Adicionar prefixo /cardapio na URL
-    const response = await fetch(`${window.API_BASE_URL}/cardapio/add`, { 
-        method: 'POST', 
-        body: JSON.stringify(novoPrato), 
-        headers: { 'Content-Type': 'application/json' } 
-    });
+    // Remover imagemUrl se vazio
+    if (!novoPrato.imagemUrl) {
+        delete novoPrato.imagemUrl;
+    }
     
-    const data = await response.json();
+    console.log('[CARDAPIO] Enviando novo prato:', novoPrato);
     
-    if (data.status === 'success') {
-        showStatus('Prato adicionado com sucesso!', 'success');
-    } else {
-        throw new Error(data.message);
+    try {
+        const response = await fetch(`${window.API_BASE_URL}/cardapio/add`, { 
+            method: 'POST', 
+            body: JSON.stringify(novoPrato), 
+            headers: { 
+                'Content-Type': 'application/json' 
+            } 
+        });
+        
+        console.log('[CARDAPIO] Resposta recebida:', response.status, response.statusText);
+        
+        // Verificar status HTTP
+        if (response.status === 400) {
+            const errorData = await response.json();
+            const errorMsg = errorData.message || 'Erro ao adicionar prato. Verifique os dados.';
+            console.error('[CARDAPIO] Erro 400:', errorMsg);
+            throw new Error(errorMsg);
+        }
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('[CARDAPIO] Erro HTTP:', response.status, errorText);
+            throw new Error(`Erro HTTP ${response.status}: ${errorText.substring(0, 100)}`);
+        }
+        
+        const data = await response.json();
+        console.log('[CARDAPIO] Dados recebidos:', data);
+        
+        if (data.status === 'success') {
+            showStatus('Prato adicionado com sucesso!', 'success');
+        } else {
+            throw new Error(data.message || 'Erro ao adicionar prato');
+        }
+    } catch (error) {
+        console.error('[CARDAPIO] Erro completo:', error);
+        throw error;
     }
 }
 
 // Função para editar prato via API
 async function editarPratoAPI(itemId, dados) {
+    // Validar restaurante_id
+    if (!window.restaurante_id || isNaN(window.restaurante_id)) {
+        throw new Error('ID do restaurante inválido. Faça login novamente.');
+    }
+    
     const novosDados = {
-        nome: dados.nome,
-        descricao: dados.descricao || 'Sem descrição',
-        preco: dados.preco,
-        imagemUrl: dados.imagemUrl
+        nome: dados.nome.trim(),
+        descricao: (dados.descricao || '').trim() || '',
+        preco: parseFloat(dados.preco),
+        imagemUrl: (dados.imagemUrl || '').trim() || '',
+        restaurante_id: window.restaurante_id  // IMPORTANTE: Adicionar restaurante_id
     };
     
-    // 🔥 CORREÇÃO: Adicionar prefixo /cardapio na URL
-    const response = await fetch(`${window.API_BASE_URL}/cardapio/edit/${itemId}`, { 
-        method: 'PUT', 
-        body: JSON.stringify(novosDados), 
-        headers: { 'Content-Type': 'application/json' } 
-    });
+    console.log('[CARDAPIO] Editando prato:', itemId, novosDados);
     
-    const data = await response.json();
-    
-    if (data.status === 'success') {
-        showStatus('Prato editado com sucesso!', 'success');
-    } else {
-        throw new Error(data.message);
+    try {
+        const response = await fetch(`${window.API_BASE_URL}/cardapio/edit/${itemId}`, { 
+            method: 'PUT', 
+            body: JSON.stringify(novosDados), 
+            headers: { 'Content-Type': 'application/json' } 
+        });
+        
+        console.log('[CARDAPIO] Resposta (editar):', response.status, response.statusText);
+        
+        if (response.status === 400) {
+            const errorData = await response.json();
+            const errorMsg = errorData.message || 'Erro ao editar prato. Verifique os dados.';
+            console.error('[CARDAPIO] Erro 400:', errorMsg);
+            throw new Error(errorMsg);
+        }
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('[CARDAPIO] Erro HTTP:', response.status, errorText);
+            throw new Error(`Erro HTTP ${response.status}: ${errorText.substring(0, 100)}`);
+        }
+        
+        const data = await response.json();
+        console.log('[CARDAPIO] Dados recebidos (editar):', data);
+        
+        if (data.status === 'success') {
+            showStatus('Prato editado com sucesso!', 'success');
+        } else {
+            throw new Error(data.message || 'Erro ao editar prato');
+        }
+    } catch (error) {
+        console.error('[CARDAPIO] Erro completo (editar):', error);
+        throw error;
     }
 }
 
@@ -422,32 +492,25 @@ async function handleRemoverPrato() {
         
         for (const itemId of itemIds) {
             try {
-                // 🔥 CORREÇÃO: Adicionar prefixo /cardapio na URL
-                const response = await fetch(`${window.API_BASE_URL}/cardapio/${itemId}`, { method: 'DELETE' });
+                const response = await fetch(`${window.API_BASE_URL}/cardapio/delete/${itemId}`, { method: 'DELETE' });
                 
-                // 🔥 CORREÇÃO CRÍTICA: Interceptar o status 409 Conflict
                 if (response.status === 409) {
                     const data = await response.json();
                     erros++;
                     itens_protegidos.push(itemId);
-                    console.warn(`⚠️ Item ${itemId} não pode ser deletado (já foi vendido):`, data.message);
-                    continue; // Pular para o próximo item
+                    continue;
                 }
                 
-                // Processar resposta JSON para outros status
                 const data = await response.json();
                 
-                // Tratar sucesso (200 OK)
                 if (response.ok && data.status === 'success') {
                     sucessos++;
-                    console.log(`✅ Item ${itemId} deletado com sucesso`);
                 } else {
                     erros++;
-                    console.warn(`❌ Falha ao deletar item ${itemId}:`, data.message || 'Erro desconhecido');
                 }
             } catch (error) {
                 erros++;
-                console.error(`❌ Erro na requisição para item ${itemId}:`, error);
+                console.error(`Erro ao deletar item ${itemId}:`, error);
             }
         }
         
@@ -482,54 +545,28 @@ async function handleRemoverPrato() {
     }
 }
 
-// Função para usar dados mock em caso de erro
-function usarDadosMock() {
-    console.log('🔄 Usando dados mock para cardápio');
-    
-    dishes = [
-        { id: 1, nome: "Salmão Grelhado", categoria: "principais", preco: 45.90, descricao: "Salmão fresco grelhado com ervas" },
-        { id: 2, nome: "Risotto de Cogumelos", categoria: "principais", preco: 38.50, descricao: "Risotto cremoso com cogumelos frescos" },
-        { id: 3, nome: "Bruschetta", categoria: "entradas", preco: 18.90, descricao: "Pão italiano com tomate e manjericão" },
-        { id: 4, nome: "Tiramisu", categoria: "sobremesas", preco: 22.90, descricao: "Sobremesa italiana tradicional" },
-        { id: 5, nome: "Vinho Tinto", categoria: "bebidas", preco: 85.00, descricao: "Vinho tinto selecionado" },
-        { id: 6, nome: "Lasanha Bolonhesa", categoria: "principais", preco: 42.90, descricao: "Lasanha tradicional italiana" }
-    ];
-    
-    renderTable();
-    updateButtonStates();
-    atualizarKPIs();
-    
-    showStatus('Usando dados de demonstração', 'loading');
-}
 
 // Função para inicializar a página de cardápio
 function inicializarCardapio() {
-    console.log('🍽️ Inicializando página de cardápio...');
     
-    // Verificar se os elementos existem antes de adicionar event listeners
     const novoPratoBtn = document.getElementById('novoPratoBtn');
     const btnEditar = document.getElementById('btnEditar');
     const btnRemover = document.getElementById('btnRemover');
     const searchInput = document.getElementById('searchInput');
     const selectAll = document.getElementById('selectAll');
     
-    // Event listeners dos botões principais
     if (novoPratoBtn) {
         novoPratoBtn.addEventListener('click', handleNovoPrato);
-        console.log('✅ Event listener adicionado ao botão Novo Prato');
     }
     
     if (btnEditar) {
         btnEditar.addEventListener('click', handleEditarPrato);
-        console.log('✅ Event listener adicionado ao botão Editar');
     }
     
     if (btnRemover) {
         btnRemover.addEventListener('click', handleRemoverPrato);
-        console.log('✅ Event listener adicionado ao botão Remover');
     }
 
-    // Event listeners do modal
     const modalClose = document.getElementById('modalClose');
     const modalCancel = document.getElementById('modalCancel');
     const modalSave = document.getElementById('modalSave');
@@ -537,33 +574,26 @@ function inicializarCardapio() {
     
     if (modalClose) {
         modalClose.addEventListener('click', fecharModal);
-        console.log('✅ Event listener adicionado ao botão Fechar do modal');
     }
     
     if (modalCancel) {
         modalCancel.addEventListener('click', fecharModal);
-        console.log('✅ Event listener adicionado ao botão Cancelar do modal');
     }
     
     if (modalSave) {
         modalSave.addEventListener('click', salvarPrato);
-        console.log('✅ Event listener adicionado ao botão Salvar do modal');
     }
     
-    // Fechar modal ao clicar fora dele
     if (modalForm) {
         modalForm.addEventListener('click', (e) => {
             if (e.target === modalForm) {
                 fecharModal();
             }
         });
-        console.log('✅ Event listener adicionado para fechar modal ao clicar fora');
     }
 
-    // Event listeners de filtros e busca
     if (searchInput) {
         searchInput.addEventListener('input', filterDishes);
-        console.log('✅ Event listener adicionado ao campo de busca');
     }
 
     if (selectAll) {
@@ -581,10 +611,8 @@ function inicializarCardapio() {
             updateButtonStates();
             renderTable();
         });
-        console.log('✅ Event listener adicionado ao checkbox Selecionar Todos');
     }
 
-    // Adiciona listener para qualquer mudança no estado das checkboxes (delegação)
     const table = document.querySelector('.chart-section table');
     if (table) {
         table.addEventListener('change', (e) => {
@@ -592,14 +620,10 @@ function inicializarCardapio() {
                 updateButtonStates();
             }
         });
-        console.log('✅ Event listener de delegação adicionado à tabela');
     }
 
-    // Carregar dados da tabela
-    console.log('🎯 Iniciando carregamento da tabela...');
     carregarTabela();
 }
 
-// ✅ CORREÇÃO: Expor função para index.html (carregamento dinâmico)
 window.inicializarCardapio = inicializarCardapio;
 

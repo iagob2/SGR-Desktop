@@ -67,7 +67,7 @@ if %errorlevel% neq 0 (
 
 echo.
 echo 🚀 Iniciando servidor Flask...
-echo 📊 Dashboard: http://localhost:5000/api/dashboard/15
+echo 📊 Dashboard: http://localhost:5000/api/dashboard/{restaurante_id}
 echo 🏥 Health Check: http://localhost:5000/api/health
 echo 🧪 Teste: Abra frontend/teste_dashboard.html no navegador
 echo.

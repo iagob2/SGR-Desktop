@@ -226,12 +226,42 @@ const PedidosApp = {
         
         emptyState.classList.add('hidden');
         
-        tableBody.innerHTML = this.state.pedidos.map(pedido => `
+        tableBody.innerHTML = this.state.pedidos.map(pedido => {
+            // CORREÇÃO: Extrair nome do cliente de diferentes formatos possíveis
+            let clienteNome = 'N/A';
+            if (pedido.cliente && typeof pedido.cliente === 'object') {
+                clienteNome = pedido.cliente.nome || pedido.cliente.nomeCliente || 'N/A';
+            } else if (pedido.cliente_nome) {
+                clienteNome = pedido.cliente_nome;
+            }
+            
+            // CORREÇÃO: Extrair data do pedido de diferentes formatos possíveis
+            let dataPedido = pedido.data_pedido || pedido.criadoEm || pedido.criado_em || new Date().toISOString();
+            
+            // CORREÇÃO: Calcular valor total se não existir
+            let valorTotal = pedido.valor_total || pedido.valor || pedido.valorTotal || 0;
+            if (valorTotal == 0 && pedido.itens && Array.isArray(pedido.itens)) {
+                // Tentar calcular pela soma dos itens
+                valorTotal = pedido.itens.reduce((total, item) => {
+                    const quantidade = item.quantidade || 0;
+                    let preco = 0;
+                    if (item.itemRestaurante && item.itemRestaurante.preco) {
+                        preco = item.itemRestaurante.preco;
+                    } else if (item.item_restaurante && item.item_restaurante.preco) {
+                        preco = item.item_restaurante.preco;
+                    } else if (item.preco) {
+                        preco = item.preco;
+                    }
+                    return total + (quantidade * preco);
+                }, 0);
+            }
+            
+            return `
             <tr onclick="PedidosApp.abrirDetalhesPedido(${pedido.id})" data-pedido-id="${pedido.id}">
                 <td><strong>#${pedido.id}</strong></td>
-                <td>${pedido.cliente.nome}</td>
-                <td>${this.formatarDataHora(pedido.data_pedido)}</td>
-                <td><strong>${this.formatarMoeda(pedido.valor_total)}</strong></td>
+                <td>${clienteNome}</td>
+                <td>${this.formatarDataHora(dataPedido)}</td>
+                <td><strong>${this.formatarMoeda(valorTotal)}</strong></td>
                 <td><span class="status-badge status-${pedido.status}">${this.formatarStatus(pedido.status)}</span></td>
                 <td>
                     <button onclick="event.stopPropagation(); PedidosApp.abrirDetalhesPedido(${pedido.id})" 
@@ -240,7 +270,8 @@ const PedidosApp = {
                     </button>
             </td>
             </tr>
-        `).join('');
+        `;
+        }).join('');
     },
 
     atualizarKPIs() {
@@ -250,28 +281,23 @@ const PedidosApp = {
         const kpis = {
             total: pedidos.length,
             // Mapear diferentes formatos de status
-            aguardando: pedidos.filter(p => 
-                p.status === 'pendente' || 
-                p.status === 'AGUARDANDO' || 
-                p.status?.toLowerCase() === 'aguardando'
-            ).length,
-            em_preparo: pedidos.filter(p => 
-                p.status === 'em_preparo' || 
-                p.status === 'EM_PREPARO' ||
-                p.status?.toLowerCase() === 'em_preparo'
-            ).length,
-            entregue: pedidos.filter(p => 
-                p.status === 'entregue' || 
-                p.status === 'FINALIZADO' ||
-                p.status === 'ENTREGUE' ||
-                p.status?.toLowerCase() === 'entregue' ||
-                p.status?.toLowerCase() === 'finalizado'
-            ).length,
-            cancelado: pedidos.filter(p => 
-                p.status === 'cancelado' || 
-                p.status === 'CANCELADO' ||
-                p.status?.toLowerCase() === 'cancelado'
-            ).length
+            aguardando: pedidos.filter(p => {
+                const status = (p.status || '').toLowerCase();
+                return status === 'pendente' || status === 'aguardando' || status === 'novo';
+            }).length,
+            em_preparo: pedidos.filter(p => {
+                const status = (p.status || '').toLowerCase();
+                return status === 'em_preparo' || status === 'em preparo';
+            }).length,
+            entregue: pedidos.filter(p => {
+                const status = (p.status || '').toLowerCase();
+                return status === 'entregue' || status === 'concluido' || status === 'concluído' || 
+                       status === 'finalizado' || status === 'pronto';
+            }).length,
+            cancelado: pedidos.filter(p => {
+                const status = (p.status || '').toLowerCase();
+                return status === 'cancelado';
+            }).length
         };
         
         elementos.totalPedidos.textContent = kpis.total;
@@ -303,14 +329,21 @@ const PedidosApp = {
         const { elementos } = this.config;
         const { pedido, itens } = detalhes;
         
+        // CORREÇÃO: Extrair dados do pedido de diferentes formatos possíveis
+        const clienteObj = pedido.cliente || {};
+        const clienteNome = clienteObj.nome || clienteObj.nomeCliente || 'N/A';
+        const clienteTelefone = clienteObj.telefone || 'Não informado';
+        const dataPedido = pedido.data_pedido || pedido.criadoEm || pedido.criado_em || new Date().toISOString();
+        const valorTotal = pedido.valor_total || pedido.valor || pedido.valorTotal || 0;
+        
         // Informações básicas
         elementos.modalTitulo.textContent = `Pedido #${pedido.id}`;
-        elementos.detalheCliente.textContent = pedido.cliente.nome;
-        elementos.detalheTelefone.textContent = pedido.cliente.telefone || 'Não informado';
-        elementos.detalheDataHora.textContent = this.formatarDataHora(pedido.data_pedido);
+        elementos.detalheCliente.textContent = clienteNome;
+        elementos.detalheTelefone.textContent = clienteTelefone;
+        elementos.detalheDataHora.textContent = this.formatarDataHora(dataPedido);
         elementos.detalheStatus.textContent = this.formatarStatus(pedido.status);
         elementos.detalheStatus.className = `info-value status-badge status-${pedido.status}`;
-        elementos.detalheTotal.textContent = this.formatarMoeda(pedido.valor_total);
+        elementos.detalheTotal.textContent = this.formatarMoeda(valorTotal);
         
         // Observações
         if (pedido.observacoes) {
@@ -320,20 +353,52 @@ const PedidosApp = {
             document.getElementById('observacoesSection').style.display = 'none';
         }
         
-        // Itens do pedido
-        elementos.detalheItens.innerHTML = itens.map(item => `
+        // CORREÇÃO: Itens do pedido - extrair dados de diferentes formatos possíveis
+        elementos.detalheItens.innerHTML = (itens || []).map(item => {
+            const nome = item.nome || item.item_nome || 'Item sem nome';
+            const preco = item.preco || item.item_preco || item.valorUnitario || 0;
+            const quantidade = item.quantidade || 0;
+            const observacoes = item.observacoes || item.observacoes_item || null;
+            
+            return `
             <div class="item-pedido">
                 <div class="item-info">
-                    <div class="item-nome">${item.nome || item.item_nome}</div>
-                    <div class="item-preco">${this.formatarMoeda(item.preco || item.item_preco)} cada</div>
-                    ${item.observacoes || item.observacoes_item ? `<div class="item-obs">Obs: ${item.observacoes || item.observacoes_item}</div>` : ''}
-                    </div>
-                <div class="item-quantidade">${item.quantidade}x</div>
-                    </div>
-        `).join('');
+                    <div class="item-nome">${nome}</div>
+                    <div class="item-preco">${this.formatarMoeda(preco)} cada</div>
+                    ${observacoes ? `<div class="item-obs">Obs: ${observacoes}</div>` : ''}
+                </div>
+                <div class="item-quantidade">${quantidade}x</div>
+            </div>
+        `;
+        }).join('');
         
-        // Status atual no select
-        elementos.novoStatus.value = pedido.status;
+        // Status atual no select - mapear para o formato do select
+        const statusAtual = pedido.status || '';
+        const statusMap = {
+            'pendente': 'pendente',
+            'PENDENTE': 'pendente',
+            'novo': 'pendente',
+            'NOVO': 'pendente',
+            'em_preparo': 'em_preparo',
+            'EM_PREPARO': 'em_preparo',
+            'pronto': 'pronto',
+            'PRONTO': 'pronto',
+            'concluido': 'concluido',
+            'concluído': 'concluido',
+            'CONCLUIDO': 'concluido',
+            'CONCLUÍDO': 'concluido',
+            'finalizado': 'concluido',
+            'FINALIZADO': 'concluido',
+            'entregue': 'entregue',
+            'ENTREGUE': 'entregue',
+            'cancelado': 'cancelado',
+            'CANCELADO': 'cancelado'
+        };
+        
+        const statusParaSelect = statusMap[statusAtual] || statusAtual.toLowerCase() || 'pendente';
+        elementos.novoStatus.value = statusParaSelect;
+        
+        console.log(`[PEDIDOS] Status atual do pedido: ${statusAtual} -> mapeado para select: ${statusParaSelect}`);
     },
 
     fecharModal() {
@@ -371,10 +436,20 @@ const PedidosApp = {
     // =============================
     
     async atualizarStatusPedido() {
-        if (!this.state.pedidoAtual) return;
+        if (!this.state.pedidoAtual) {
+            this.mostrarErro('Nenhum pedido selecionado');
+            return;
+        }
         
         const novoStatus = this.config.elementos.novoStatus.value;
         const pedidoId = this.state.pedidoAtual.pedido.id;
+        
+        if (!novoStatus) {
+            this.mostrarErro('Por favor, selecione um status');
+            return;
+        }
+        
+        console.log(`[PEDIDOS] Atualizando status do pedido ${pedidoId} para: ${novoStatus}`);
         
         try {
             const response = await fetch(`${this.config.API_BASE_URL}/pedidos/${pedidoId}/status`, {
@@ -385,18 +460,45 @@ const PedidosApp = {
                 body: JSON.stringify({ status: novoStatus })
             });
             
+            // Verificar se a resposta é ok antes de parsear JSON
+            if (!response.ok) {
+                let errorMsg = `Erro HTTP ${response.status}`;
+                try {
+                    const errorData = await response.json();
+                    errorMsg = errorData.message || errorData.error || errorMsg;
+                } catch (e) {
+                    errorMsg = `Erro ao atualizar status (Status ${response.status})`;
+                }
+                console.error(`[PEDIDOS] Erro HTTP: ${response.status} - ${errorMsg}`);
+                throw new Error(errorMsg);
+            }
+            
             const data = await response.json();
+            
+            console.log(`[PEDIDOS] Resposta da API:`, data);
             
             if (data.status === 'success') {
                 this.mostrarSucesso('Status atualizado com sucesso!');
                 this.fecharModal();
-                this.carregarPedidos(); // Recarregar lista
+                // Aguardar um pouco antes de recarregar para garantir que a atualização foi processada
+                setTimeout(() => {
+                    this.carregarPedidos(); // Recarregar lista
+                }, 500);
             } else {
-                throw new Error(data.message || 'Erro ao atualizar status');
+                const errorMsg = data.message || data.error || 'Erro ao atualizar status';
+                console.error(`[PEDIDOS] Erro na resposta: ${errorMsg}`);
+                throw new Error(errorMsg);
             }
         
-    } catch (error) {
-            this.mostrarErro(`Erro ao atualizar status: ${error.message}`);
+        } catch (error) {
+            console.error(`[PEDIDOS] Erro ao atualizar status:`, error);
+            // Evitar mensagem duplicada
+            const errorMsg = error.message || 'Erro ao atualizar status';
+            if (!errorMsg.includes('Erro ao atualizar status')) {
+                this.mostrarErro(errorMsg);
+            } else {
+                this.mostrarErro('Não foi possível atualizar o status. Verifique os logs do servidor.');
+            }
         }
     },
 
@@ -424,16 +526,16 @@ const PedidosApp = {
 
     formatarStatus(status) {
         const statusMap = {
-            'pendente': 'Pendente',
-            'aguardando': 'Aguardando',
-            'AGUARDANDO': 'Aguardando',
+           
             'em_preparo': 'Em Preparo',
             'EM_PREPARO': 'Em Preparo',
-            'pronto': 'Pronto',
-            'entregue': 'Entregue',
-            'ENTREGUE': 'Entregue',
-            'finalizado': 'Finalizado',
-            'FINALIZADO': 'Finalizado',
+            
+            'concluido': 'Concluído',
+            'concluído': 'Concluído',
+            'CONCLUIDO': 'Concluído',
+            'CONCLUÍDO': 'Concluído',
+           
+            
             'cancelado': 'Cancelado',
             'CANCELADO': 'Cancelado'
         };

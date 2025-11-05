@@ -29,7 +29,7 @@ timeout /t 5 /nobreak >nul
 
 REM Verificar se servidor está rodando
 echo 🔍 Verificando se servidor está rodando...
-curl -s http://localhost:5000/api/dashboard/15 >nul 2>&1
+curl -s http://localhost:5000/api/health >nul 2>&1
 if %errorlevel% equ 0 (
     echo ✅ Servidor Flask rodando em http://localhost:5000
 ) else (

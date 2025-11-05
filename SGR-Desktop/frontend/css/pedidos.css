@@ -142,18 +142,22 @@
 
 .status-pendente,
 .status-aguardando,
-.status-AGUARDANDO { 
+.status-AGUARDANDO,
+.status-novo,
+.status-NOVO,
+.status-PENDENTE {
     background: #fef3c7; 
     color: #92400e; 
 }
 
 .status-em_preparo,
-.status-EM_PREPARO { 
+.status-EM_PREPARO {
     background: #dbeafe; 
     color: #1e40af; 
 }
 
-.status-pronto { 
+.status-pronto,
+.status-PRONTO { 
     background: #d1fae5; 
     color: #065f46; 
 }
@@ -161,7 +165,11 @@
 .status-entregue,
 .status-ENTREGUE,
 .status-finalizado,
-.status-FINALIZADO { 
+.status-FINALIZADO,
+.status-concluido,
+.status-concluído,
+.status-CONCLUIDO,
+.status-CONCLUÍDO { 
     background: #e0e7ff; 
     color: #3730a3; 
 }
