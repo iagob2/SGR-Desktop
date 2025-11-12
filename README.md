@@ -225,9 +225,91 @@ cd ..
 
 ---
 
-## 🧪 Dados & Ambiente de Teste
+## 🧪 Ambiente de Teste
 
-Quando a API Java externa não responde, o backend fornece dados mock (especialmente em `routes/pedidos.py`), garantindo que o frontend permaneça funcional para desenvolvimento, demonstrações ou ambientes sem conexão.
+O SGR Desktop possui uma suíte completa de testes automatizados que cobre diferentes níveis de teste, desde funções isoladas até fluxos completos do sistema.
+
+### 📚 Documentação de Testes
+
+- 🧪 [`SGR-Desktop/backend/tests/README_TESTES.md`](./SGR-Desktop/backend/tests/README_TESTES.md) — guia completo de testes do backend (unitários e integração)
+- 🧪 [`SGR-Desktop/TESTES_SISTEMA.md`](./SGR-Desktop/TESTES_SISTEMA.md) — testes de sistema e fluxos funcionais completos
+- 🧪 [`SGR-Desktop/frontend/tests/README_TESTES.md`](./SGR-Desktop/frontend/tests/README_TESTES.md) — guia de testes do frontend
+
+### 🎯 Tipos de Testes Implementados
+
+#### 1. Testes de Unidade (Unit Tests)
+**Backend:**
+- ✅ Funções de parsing HTML/JSON (`test_unit_parsing.py`)
+- ✅ Cálculos analíticos e KPIs (`test_unit_analytics.py`)
+- ✅ Utilitários (validação de status) (`test_unit_utils.py`)
+
+**Frontend:**
+- ✅ Formatação de dados (moeda, data, categoria)
+- ✅ Validação de formulários
+- ✅ Gerenciamento de estado (localStorage)
+
+#### 2. Testes de Integração (Integration Tests)
+- ✅ Proxy Flask ↔️ API Externa (`test_integration_proxy.py`)
+- ✅ Endpoints Flask (`test_integration_flask.py`)
+- ✅ Frontend ↔️ Backend (comunicação HTTP)
+
+#### 3. Testes de Sistema (System Tests)
+- ✅ Fluxo completo de autenticação
+- ✅ Fluxo de venda (PDV)
+- ✅ CRUD completo de cardápio
+- ✅ Gestão de pedidos
+- ✅ Dashboard analítico
+
+#### 4. Testes de Aceitação (UAT)
+- ✅ Tarefas do mundo real para gestores
+- ✅ Tarefas do mundo real para operadores
+- ✅ Validação com usuários finais
+
+### 🚀 Como Executar os Testes
+
+#### Backend (Python/pytest)
+
+```bash
+# No diretório backend
+cd SGR-Desktop/backend
+
+# Ativar ambiente virtual
+venv\Scripts\activate
+
+# Instalar dependências de teste
+pip install pytest pytest-mock pytest-cov
+
+# Executar todos os testes
+pytest
+
+# Executar com cobertura
+pytest --cov=app --cov-report=html
+```
+
+#### Frontend (JavaScript/Jest)
+
+```bash
+# No diretório frontend
+cd SGR-Desktop/frontend
+
+# Instalar dependências de teste
+npm install --save-dev jest @testing-library/jest-dom
+
+# Executar testes
+npm test
+```
+
+### 📊 Cobertura de Código
+
+- **Meta de Cobertura:** ≥ 80% para testes unitários
+- **Funções Críticas:** 100% de cobertura (parsing, cálculos, validações)
+
+### 🔍 Testes Não Funcionais
+
+- **Performance:** Tempo de carregamento do dashboard (< 3s)
+- **Segurança:** Controle de acesso e validação de sessão
+- **Compatibilidade:** Windows (testado e validado)
+- **Usabilidade:** Interface intuitiva para operadores
 
 ---
 
