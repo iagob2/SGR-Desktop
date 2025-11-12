@@ -181,6 +181,7 @@ cd ..
 - 🎨 [`Documentos_Auxiliares/DOCUMENTACAO_FRONTEND.md`](./Documentos_Auxiliares/DOCUMENTACAO_FRONTEND.md) — documentação técnica completa do frontend (arquitetura Electron, sistema SPA, gerenciamento de estado, detalhes de implementação).
 - 📁 [`Documentos_Auxiliares/DOCUMENTACAO_LOGICA_RAIZ.md`](./Documentos_Auxiliares/DOCUMENTACAO_LOGICA_RAIZ.md) — organização geral do projeto (scripts de inicialização, orquestração, fluxos de execução).
 - 📋 [`SGR-Desktop/backend/README_BACKEND.md`](./SGR-Desktop/backend/README_BACKEND.md) — documentação específica do backend.
+- 📋 [`SGR-Desktop/frontend/README_FRONTEND.md`](./SGR-Desktop/frontend/README_FRONTEND.md) — documentação específica do frontend
 
 ### 📖 Instruções e Guias
 
