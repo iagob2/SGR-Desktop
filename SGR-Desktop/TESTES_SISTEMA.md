@@ -379,5 +379,6 @@ O sistema está pronto para produção quando:
 
 ---
 
-**Última atualização:** Dezembro 2024
+**Última atualização:**  12/11/2025
+
 
