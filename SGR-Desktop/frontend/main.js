@@ -6,40 +6,77 @@ let mainWindow;
 let flaskProcess;
 
 // Função para iniciar o servidor Flask
+// Função para iniciar o servidor Flask
 function startFlask() {
+    // Verificar se estamos em desenvolvimento ou produção
+    const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
     
-    // Caminho para o app.py
-    const flaskPath = path.join(__dirname, '..', 'backend', 'app.py');
+    if (isDev) {
+        // Modo desenvolvimento: usar Python do venv
+        const flaskPath = path.join(__dirname, '..', 'backend', 'app.py');
+        const pythonPath = path.join(__dirname, '..', 'backend', 'venv', 'Scripts', 'python.exe');
+        
+        // Iniciar processo Flask com Python
+        flaskProcess = spawn(pythonPath, [flaskPath], {
+            cwd: path.join(__dirname, '..', 'backend'),
+            stdio: ['pipe', 'pipe', 'pipe']
+        });
+    } else {
+        // Modo produção: usar executável do Flask
+        const fs = require('fs');
+        
+        // Tentar múltiplos caminhos possíveis
+        const possiblePaths = [
+            path.join(process.resourcesPath, 'flask_server.exe'),  // Caminho padrão (empacotado)
+            path.join(__dirname, '..', 'resources', 'flask_server.exe'),  // Caminho alternativo (desenvolvimento)
+            path.join(__dirname, '..', 'backend', 'dist', 'flask_server.exe'),  // Caminho de fallback
+            path.join(process.cwd(), 'resources', 'flask_server.exe'),  // Caminho relativo ao diretório de trabalho
+        ];
+        
+        let finalPath = null;
+        for (const possiblePath of possiblePaths) {
+            if (fs.existsSync(possiblePath)) {
+                finalPath = possiblePath;
+                console.log(`✅ Executável do Flask encontrado em: ${finalPath}`);
+                break;
+            }
+        }
+        
+        if (!finalPath) {
+            console.error('❌ Executável do Flask não encontrado em nenhum dos caminhos:');
+            possiblePaths.forEach(p => console.error(`   - ${p}`));
+            console.error('💡 Certifique-se de que o Flask foi empacotado corretamente');
+            console.error('💡 Verifique se o arquivo flask_server.exe existe em resources/');
+            return null;
+        }
+        
+        // Iniciar processo Flask com executável
+        console.log(`🚀 Iniciando Flask a partir de: ${finalPath}`);
+        flaskProcess = spawn(finalPath, [], {
+            cwd: path.dirname(finalPath),
+            stdio: ['pipe', 'pipe', 'pipe']
+        });
+    }
     
-    // Caminho para o Python do ambiente virtual
-    const pythonPath = path.join(__dirname, '..', 'backend', 'venv', 'Scripts', 'python.exe');
-    
-    // Iniciar processo Flask
-    flaskProcess = spawn(pythonPath, [flaskPath], {
-        cwd: path.join(__dirname, '..', 'backend'),
-        stdio: ['pipe', 'pipe', 'pipe']
-    });
-
     // Logs do Flask
     flaskProcess.stdout.on('data', (data) => {
         console.log(`Flask: ${data}`);
     });
-
+    
     flaskProcess.stderr.on('data', (data) => {
         console.error(`Flask Error: ${data}`);
     });
-
+    
     flaskProcess.on('close', (code) => {
         console.log(`Flask process exited with code ${code}`);
     });
-
+    
     flaskProcess.on('error', (err) => {
         console.error('Failed to start Flask:', err);
     });
-
+    
     return flaskProcess;
 }
-
 // Função para parar o servidor Flask
 function stopFlask() {
     if (flaskProcess) {

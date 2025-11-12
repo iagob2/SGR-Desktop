@@ -35,6 +35,10 @@ wheels/
 .installed.cfg
 *.egg
 
+# PyInstaller (manter .spec, ignorar apenas backups)
+*.spec.bak
+*.manifest
+
 # PyCharm
 .idea/
 
@@ -51,6 +55,16 @@ yarn-error.log
 out/
 dist-electron/
 release/
+dist/
+
+# Executáveis gerados
+*.exe
+*.dll
+*.dylib
+*.so
+
+# Recursos do Electron (executáveis Flask)
+SGR-Desktop/frontend/resources/
 
 # ============================================================================
 # BANCO DE DADOS
@@ -63,6 +77,7 @@ release/
 
 # Configuração com senhas (use config.env.example)
 backend/config.env
+SGR-Desktop/backend/config.env
 
 # ============================================================================
 # SISTEMA OPERACIONAL

@@ -6,10 +6,10 @@
   "scripts": {
     "start": "electron .",
     "dev": "NODE_ENV=development electron .",
-    "build": "electron-builder",
-    "pack": "electron-builder --dir",
-    "dist": "electron-builder",
-    "postinstall": "electron-builder install-app-deps",
+    "build": "electron-builder --dir --win",
+    "build:installer": "electron-builder --win",
+    "pack": "electron-builder --dir --win",
+    "dist": "electron-builder --win",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"
@@ -33,25 +33,36 @@
     "appId": "com.sgrdesktop.app",
     "productName": "SGR-Desktop",
     "directories": {
-      "output": "dist"
+        "output": "dist"
     },
     "files": [
-      "**/*",
-      "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
-      "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
-      "!**/node_modules/*.d.ts",
-      "!**/node_modules/.bin",
-      "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}",
-      "!.editorconfig",
-      "!**/._*",
-      "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}",
-      "!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}",
-      "!**/{appveyor.yml,.travis.yml,circle.yml}",
-      "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}"
+        "**/*",
+        "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
+        "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
+        "!**/node_modules/*.d.ts",
+        "!**/node_modules/.bin",
+        "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}",
+        "!.editorconfig",
+        "!**/._*",
+        "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}",
+        "!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}",
+        "!**/{appveyor.yml,.travis.yml,circle.yml}",
+        "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}",
+        "!../backend/**"
     ],
+    "extraResources": [
+        {
+            "from": "resources/flask_server.exe",
+            "to": "flask_server.exe"
+        }
+    ],
+    
     "win": {
-      "target": "nsis",
-      "icon": "assets/icon.ico"
+      "target": "dir",
+      "icon": "assets/icon.ico",
+      "sign": null,
+      "signAndEditExecutable": false,
+      "signDlls": false
     },
     "mac": {
       "target": "dmg",
@@ -74,4 +85,6 @@
     "url": "https://github.com/seu-usuario/sgr-desktop/issues"
   },
   "homepage": "https://github.com/seu-usuario/sgr-desktop#readme"
+
+  
 }

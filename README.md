@@ -189,6 +189,12 @@ cd ..
 - ⚒️ [`INSTRUCOES_COMPILACAO.md`](./INSTRUCOES_COMPILACAO.md) — compilação rápida em três comandos.
 - 🧩 [`INSTRUCOES_CLIENTE.md`](./INSTRUCOES_CLIENTE.md) — instalação e primeiros passos para clientes finais.
 
+### 🔧 Documentação de Build
+
+- 📚 [`SGR-Desktop/DOCUMENTACAO_BUILD_COMPLETO.md`](./SGR-Desktop/DOCUMENTACAO_BUILD_COMPLETO.md) — documentação completa do processo de build (problemas, soluções, troubleshooting).
+- 📋 [`SGR-Desktop/RESUMO_ERROS_SOLUCOES.md`](./SGR-Desktop/RESUMO_ERROS_SOLUCOES.md) — resumo executivo dos principais erros e soluções do build.
+- 🚀 [`SGR-Desktop/frontend/COMO_EXECUTAR_BUILD.md`](./SGR-Desktop/frontend/COMO_EXECUTAR_BUILD.md) — guia passo a passo para executar o build.
+
 ---
 
 ## 📦 Empacotamento & Distribuição
@@ -222,6 +228,9 @@ cd ..
 | `npm start` não abre a janela Electron  | Node.js desatualizado / dependências faltantes    | Atualizar Node ≥ 18.x e rodar `npm install`.                                      |
 | `electron-builder not found`            | Dependência ausente no build                      | Executar `npm install --save-dev electron-builder`.                                |
 | CRUDs falhando / sessão perdida         | Cookies expirados ou múltiplos `JSESSIONID`       | Relogar; o proxy limpa e renova cookies automaticamente.                          |
+| **Erro de symlinks no build**          | **Windows não cria symlinks sem admin**           | **Ver [`SGR-Desktop/DOCUMENTACAO_BUILD_COMPLETO.md`](./SGR-Desktop/DOCUMENTACAO_BUILD_COMPLETO.md)** |
+| **`configuration.win has unknown property 'arch'`** | **Propriedade inválida no package.json** | **Remover `arch` de dentro de `win` no `package.json`** |
+| **Executável não gerado após build**   | **Cache corrompido ou falta de permissões**       | **Limpar cache como Administrador: `Remove-Item -Path "$env:LOCALAPPDATA\electron-builder\Cache\winCodeSign" -Recurse -Force`** |
 
 ---
 

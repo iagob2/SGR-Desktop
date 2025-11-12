@@ -236,5 +236,6 @@ class TestNomeDaFuncao:
 
 ---
 
-**Última atualização:** Dezembro 2024
+**Última atualização:**  12/11/2025
+
 
