@@ -175,10 +175,18 @@ cd ..
 
 ## 🧾 Documentação Complementar
 
-- 📘 [`backend/README_BACKEND.md`](./backend/README_BACKEND.md) — referência completa do backend (rotas, parsing, diagnósticos).
-- 🧩 [`INSTRUCOES_CLIENTE.md`](./INSTRUCOES_CLIENTE.md) — instalação e primeiros passos para clientes finais.
-- ⚙️ [`COMPILACAO_FINAL.md`](./COMPILACAO_FINAL.md) — guia completo de empacotamento/distribuição.
+### 📚 Documentação Técnica Detalhada
+
+- 📘 [`Documentos_Auxiliares/DOCUMENTACAO_BACKEND.md`](./Documentos_Auxiliares/DOCUMENTACAO_BACKEND.md) — documentação técnica completa do backend (arquitetura, rotas, parsing HTML/JSON, gerenciamento de sessão, detalhes de implementação).
+- 🎨 [`Documentos_Auxiliares/DOCUMENTACAO_FRONTEND.md`](./Documentos_Auxiliares/DOCUMENTACAO_FRONTEND.md) — documentação técnica completa do frontend (arquitetura Electron, sistema SPA, gerenciamento de estado, detalhes de implementação).
+- 📁 [`Documentos_Auxiliares/DOCUMENTACAO_LOGICA_RAIZ.md`](./Documentos_Auxiliares/DOCUMENTACAO_LOGICA_RAIZ.md) — organização geral do projeto (scripts de inicialização, orquestração, fluxos de execução).
+- 📋 [`SGR-Desktop/backend/README_BACKEND.md`](./SGR-Desktop/backend/README_BACKEND.md) — documentação específica do backend.
+
+### 📖 Instruções e Guias
+
+- 👨‍💻 [`INSTRUCOES_DESENVOLVIMENTO.md`](./INSTRUCOES_DESENVOLVIMENTO.md) — instruções completas para desenvolvedores (setup, execução, troubleshooting).
 - ⚒️ [`INSTRUCOES_COMPILACAO.md`](./INSTRUCOES_COMPILACAO.md) — compilação rápida em três comandos.
+- 🧩 [`INSTRUCOES_CLIENTE.md`](./INSTRUCOES_CLIENTE.md) — instalação e primeiros passos para clientes finais.
 
 ---
 
