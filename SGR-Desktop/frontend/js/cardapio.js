@@ -35,6 +35,7 @@ function abrirModal(modo = 'novo', itemId = null) {
             document.getElementById('nomePrato').value = prato.nome;
             document.getElementById('descricaoPrato').value = prato.descricao || '';
             document.getElementById('precoPrato').value = prato.preco;
+            document.getElementById('categoriaPrato').value = prato.categoria || '';
             document.getElementById('imagemPrato').value = prato.imagemUrl || '';
         }
     }
@@ -54,6 +55,7 @@ function obterDadosFormulario() {
         nome: document.getElementById('nomePrato').value.trim(),
         descricao: document.getElementById('descricaoPrato').value.trim(),
         preco: parseFloat(document.getElementById('precoPrato').value),
+        categoria: document.getElementById('categoriaPrato').value.trim(),
         imagemUrl: document.getElementById('imagemPrato').value.trim()
     };
 }
@@ -61,6 +63,11 @@ function obterDadosFormulario() {
 function validarFormulario(dados) {
     if (!dados.nome) {
         showStatus('Nome do prato é obrigatório', 'error');
+        return false;
+    }
+    
+    if (!dados.categoria) {
+        showStatus('Categoria é obrigatória', 'error');
         return false;
     }
     
@@ -196,7 +203,7 @@ function renderTable(filteredDishes = dishes) {
     if (!filteredDishes || filteredDishes.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="5" class="px-6 py-12 text-center">
+                <td colspan="6" class="px-6 py-12 text-center">
                     <div class="flex flex-col items-center">
                         <svg class="w-20 h-20 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
@@ -218,9 +225,13 @@ function renderTable(filteredDishes = dishes) {
         
         // Emoji baseado no nome do prato
         const emoji = obterEmojiPrato(dish.nome);
+        
+        // Formatar categoria para exibição
+        const categoriaFormatada = formatarCategoria(dish.categoria || 'OUTROS');
 
         const row = document.createElement('tr');
         row.className = isSelected ? 'bg-blue-50' : 'hover:bg-gray-50';
+        
         row.innerHTML = `
             <td class="px-6 py-4 whitespace-nowrap">
                 <input type="checkbox" name="item_select" class="dish-checkbox rounded border-gray-300" 
@@ -233,7 +244,12 @@ function renderTable(filteredDishes = dishes) {
                 <div class="text-sm font-medium text-gray-900">${emoji} ${dish.nome}</div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm text-gray-500">${dish.descricao}</div>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    ${categoriaFormatada}
+                </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <div class="text-sm text-gray-500">${dish.descricao || '-'}</div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
                 <span class="text-sm font-medium text-gray-900">R$ ${dish.preco.toFixed(2).replace('.', ',')}</span>
@@ -255,6 +271,21 @@ function renderTable(filteredDishes = dishes) {
             renderTable(filteredDishes);
         });
     });
+}
+
+// Função para formatar categoria para exibição
+function formatarCategoria(categoria) {
+    const categorias = {
+        'ENTRADA': 'Entrada',
+        'PRATO_PRINCIPAL': 'Prato Principal',
+        'SOBREMESA': 'Sobremesa',
+        'BEBIDA': 'Bebida',
+        'LANCHE': 'Lanche',
+        'SALADA': 'Salada',
+        'ACOMPANHAMENTO': 'Acompanhamento',
+        'OUTROS': 'Outros'
+    };
+    return categorias[categoria] || categoria;
 }
 
 // Função para obter emoji baseado no nome do prato
@@ -284,12 +315,14 @@ function filterDishes() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
 
     const filtered = dishes.filter(dish => {
-        // 🚨 MUDANÇA AQUI 🚨
         const dishIdString = String(dish.id); // Converte o ID numérico para string
+        const categoriaFormatada = formatarCategoria(dish.categoria || 'OUTROS').toLowerCase();
         
         const matchesSearch = 
             dish.nome.toLowerCase().includes(searchTerm) || // Busca por nome
-            dishIdString.includes(searchTerm);             // Busca por ID
+            dishIdString.includes(searchTerm) ||           // Busca por ID
+            categoriaFormatada.includes(searchTerm) ||     // Busca por categoria
+            (dish.categoria && dish.categoria.toLowerCase().includes(searchTerm)); // Busca por código da categoria
         
         return matchesSearch;
     });
@@ -366,6 +399,7 @@ async function adicionarPratoAPI(dados) {
         nome: dados.nome.trim(),
         descricao: (dados.descricao || '').trim() || 'Sem descrição',
         preco: parseFloat(dados.preco),
+        categoria: dados.categoria.trim() || 'OUTROS',
         imagemUrl: (dados.imagemUrl || '').trim() || null
     };
     
@@ -426,6 +460,7 @@ async function editarPratoAPI(itemId, dados) {
         nome: dados.nome.trim(),
         descricao: (dados.descricao || '').trim() || '',
         preco: parseFloat(dados.preco),
+        categoria: dados.categoria.trim() || 'OUTROS',
         imagemUrl: (dados.imagemUrl || '').trim() || '',
         restaurante_id: window.restaurante_id  // IMPORTANTE: Adicionar restaurante_id
     };

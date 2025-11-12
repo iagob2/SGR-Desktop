@@ -2,28 +2,43 @@
 
 ## 📋 Visão Geral
 
-Backend desenvolvido em **Flask (Python)** que fornece APIs REST para o sistema de gerenciamento de restaurantes. Conecta-se ao banco de dados **PostgreSQL** e oferece endpoints para:
+Backend desenvolvido em **Flask (Python)** que funciona como um proxy entre o cliente Electron e a API Java na nuvem. A arquitetura agora está modularizada:
 
-- Autenticação de usuários
-- Gestão de pedidos
-- Consulta de vendas e relatórios
-- CRUD de cardápio
-- Sistema de avaliações
-- Dados para dashboards
+```
+Electron -> Flask (localhost:5000) -> API Externa (nuvem:8080) -> PostgreSQL
+```
+
+Principais responsabilidades:
+
+- Proxy de autenticação, pedidos, cardápio, avaliações e dashboards
+- Tratamento e parse de respostas HTML/JSON vindas da API externa
+- Cálculos analíticos locais (top produtos, vendas, métricas do dashboard)
+- Manutenção de sessão/cookies com tratamento de duplicidade
 
 ---
 
-## 🗄️ Estrutura do Banco de Dados
+## 🗂️ Estrutura de Pastas
 
-### Tabelas Principais
-
-```sql
-restaurante        -- Informações do restaurante
-clientes          -- Dados dos clientes
-pedido           -- Pedidos realizados
-item_pedido      -- Itens de cada pedido
-item_restaurante -- Cardápio do restaurante
-avaliacao        -- Avaliações dos clientes
+```
+backend/
+├── app.py                   # Entry point (banner, health check, run server)
+├── app/                     # Pacote principal
+│   ├── __init__.py          # Flask app, CORS, registro de blueprints
+│   ├── config.py            # Carregamento e sanitização de variáveis de ambiente
+│   ├── proxy.py             # Sessão requests, proxy_request, parse HTML, cookies
+│   ├── routes/              # Blueprints por domínio
+│   │   ├── analytics.py     # Top produtos, vendas por período, dashboard
+│   │   ├── avaliacoes.py    # Avaliações de restaurante e pratos
+│   │   ├── cardapio.py      # CRUD do cardápio (proxy itens)
+│   │   ├── pedidos.py       # Listagem, filtro, detalhes e status de pedidos
+│   │   └── system.py        # Login, perfil, health check
+│   ├── services/
+│   │   └── diagnostics.py   # Diagnóstico de conectividade com API externa
+│   └── utils/
+│       └── status.py        # Funções auxiliares (ex.: is_status_concluido)
+├── config.env               # Variáveis de ambiente (URL da API, timeout, etc.)
+├── requirements.txt         # Dependências Python
+└── README_BACKEND.md        # Este documento
 ```
 
 ---
@@ -37,33 +52,36 @@ avaliacao        -- Avaliações dos clientes
 python -m venv venv
 
 # Ative o ambiente virtual
-# No Windows:
+# Windows:
 venv\Scripts\activate
-
-# No Linux/Mac:
+# Linux/Mac:
 source venv/bin/activate
 
 # Instale as dependências
 pip install -r requirements.txt
 ```
 
-**Dependências:**
-- Flask 2.3.3
-- psycopg2 2.9.11
-- flask-cors 6.0.1
-- python-dotenv 1.1.1
+Dependências principais:
 
-### 2. Configurar Banco de Dados
+- Flask 3.x
+- flask-cors 6.x
+- requests 2.x
+- python-dotenv 1.x
+- beautifulsoup4 4.x (opcional, mas recomendado para parse de HTML)
 
-Edite o arquivo `config.env`:
+### 2. Configurar Variáveis
+
+Edite `config.env`:
 
 ```env
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=sgr_restaurante
-DB_USER=postgres
-DB_PASSWORD=sua_senha_aqui
+API_EXTERNA_URL=http://3.90.155.156:8080    # URL da API Java
+API_TIMEOUT=30                              # Timeout em segundos
 ```
+
+Alertas:
+
+- Remova comentários na mesma linha das variáveis (o parser sanitiza, mas o ideal é deixar limpo).
+- Outras variáveis (DB_HOST, DB_USER etc.) podem ser ignoradas: a comunicação com o PostgreSQL acontece na API Java.
 
 ### 3. Executar o Servidor
 
@@ -71,276 +89,149 @@ DB_PASSWORD=sua_senha_aqui
 python app.py
 ```
 
-O servidor será iniciado em: `http://localhost:5000`
+Ou, usando o script do projeto:
+
+```bash
+python iniciar_completo.bat
+```
+
+O servidor Flask sobe em `http://localhost:5000`.
 
 ---
 
-## 🔌 Endpoints da API
+## 🔌 Endpoints (Blueprints)
 
-### Autenticação
+### Cardápio (`app/routes/cardapio.py`)
 
-```
-POST /api/login
-```
+- `GET /api/cardapio/<int:restaurante_id>`
+- `POST /api/cardapio/add`
+- `PUT /api/cardapio/edit/<int:item_id>`
+- `DELETE /api/cardapio/delete/<int:item_id>`
 
-**Request:**
-```json
-{
-  "email": "admin@restaurante.com",
-  "senha": "admin123"
-}
-```
+Todos os endpoints usam `proxy_request` e respeitam os cookies/sessão do restaurante.
 
-**Response:**
-```json
-{
-  "status": "success",
-  "data": {
-    "restaurante_id": 1,
-    "nome": "Restaurante Sabore"
-  }
-}
-```
+### Pedidos (`app/routes/pedidos.py`)
 
-### Pedidos
+- `GET /api/pedidos/restaurante/<int:restaurante_id>`
+  - Filtros: `status`, `data_inicio`, `data_fim`
+- `GET /api/pedidos/restaurante/<int:restaurante_id>/concluidos`
+- `GET /api/pedidos/<int:pedido_id>`
+- `PUT /api/pedidos/<int:pedido_id>/status`
 
-#### Listar Pedidos de um Restaurante
-```
-GET /api/pedidos/restaurante/<int:restaurante_id>
-```
+Inclui dados mock para testes quando a API externa não retorna pedidos.
 
-**Parâmetros opcionais (query):**
-- `status` - Filtrar por status (pendente, em_preparo, pronto, entregue, cancelado)
-- `data_inicio` - Data inicial (YYYY-MM-DD)
-- `data_fim` - Data final (YYYY-MM-DD)
+### Analytics (`app/routes/analytics.py`)
 
-**Response:**
-```json
-{
-  "status": "success",
-  "data": [
-    {
-      "id": 103,
-      "valor_total": 139.30,
-      "status": "FINALIZADO",
-      "data_pedido": "2025-10-23T18:30:00",
-      "cliente": {
-        "nome": "Bruno Costa",
-        "telefone": "(11) 99999-1234"
-      }
-    }
-  ],
-  "count": 5
-}
-```
+- `GET /api/top-produtos/<int:restaurante_id>/<periodo>`
+- `GET /api/vendas/<int:restaurante_id>/<periodo>`
+- `GET /api/dashboard/<int:restaurante_id>`
 
-#### Detalhes de um Pedido
-```
-GET /api/pedidos/<int:pedido_id>
-```
+Períodos aceitos: `semanal`, `mensal`, `anual`. Os cálculos são feitos localmente com base nos pedidos concluídos.
 
-**Response:**
-```json
-{
-  "status": "success",
-  "data": {
-    "pedido": {
-      "id": 103,
-      "status": "FINALIZADO",
-      "data_pedido": "2025-10-23T18:30:00",
-      "observacoes": "Sem cebola",
-      "valor_total": 139.30,
-      "cliente": {
-        "nome": "Bruno Costa",
-        "telefone": "(11) 99999-1234",
-        "email": "bruno@email.com"
-      }
-    },
-    "itens": [
-      {
-        "nome": "Pizza Quatro Queijos",
-        "quantidade": 1,
-        "preco": 80.00,
-        "subtotal": 80.00,
-        "observacoes": "Extra queijo",
-        "descricao": "Pizza com queijos especiais"
-      }
-    ]
-  }
-}
-```
+### Avaliações (`app/routes/avaliacoes.py`)
 
-#### Atualizar Status de Pedido
-```
-PUT /api/pedidos/<int:pedido_id>/status
-```
+- `GET /api/avaliacoes/<int:restaurante_id>`
+- `GET /api/avaliacoes/pratos/<int:restaurante_id>`
+- `POST /api/avaliacoes-prato`
 
-**Request:**
-```json
-{
-  "status": "em_preparo"
-}
-```
+Filtra avaliações de pratos cruzando os itens do restaurante.
 
-**Status válidos:**
-- `pendente`
-- `em_preparo`
-- `pronto`
-- `entregue`
-- `cancelado`
+### Sistema (`app/routes/system.py`)
 
-### Dashboard
+- `POST /api/restaurantes/login`
+- `GET /api/restaurantes/perfil`
+- `GET /api/restaurantes/<int:restaurante_id>`
+- `GET /api/health`
 
-```
-GET /api/dashboard/<int:restaurante_id>/resumo?periodo=semanal
-```
-
-**Response:**
-```json
-{
-  "status": "success",
-  "data": {
-    "vendas_totais": 15234.50,
-    "pedidos_totais": 247,
-    "ticket_medio": 61.68,
-    "vendas_diarias": {...},
-    "produtos_diarios": {...}
-  }
-}
-```
-
-### Cardápio
-
-```
-GET /api/cardapio/<int:restaurante_id>
-POST /api/cardapio/item
-PUT /api/cardapio/item/<int:item_id>
-DELETE /api/cardapio/item/<int:item_id>
-```
-
-### Avaliações
-
-```
-GET /api/avaliacoes/<int:restaurante_id>
-GET /api/avaliacoes/<int:restaurante_id>/resumo
-```
+Responsável por autenticação, perfil e checagem de saúde.
 
 ---
 
-## 🎨 Esquema de Cores
+## 🔄 Fluxo de Proxy
 
-O backend não tem interface visual, mas os dados retornados são consumidos pela interface verde (`#2CB480`).
+1. Frontend chama endpoint Flask (`/api/...`).
+2. `proxy_request` mapeia para endpoint da API Java.
+3. Sessão compartilhada (`requests.Session`) mantém cookies; duplicatas são tratadas.
+4. Resposta é parseada independente do `Content-Type` (JSON > HTML > texto).
+5. Login: resposta é normalizada para o formato esperado pelo Electron.
+
+---
+
+## 🧪 Dados de Teste
+
+Quando a API externa não retorna dados (ex.: pedidos), o backend entrega mocks para garantir que o frontend funcione durante desenvolvimento.
+
+---
+
+## 🔒 Segurança & Diagnóstico
+
+- Sessões persistidas com limpeza de cookies duplicados (`proxy.py`).
+- Diagnóstico detalhado para:
+  - Timeout (`status: 504`)
+  - Conexão recusada (`status: 503`)
+  - URL inválida (instruções para `config.env`)
+  - Erros 401/403 com fallback `form-urlencoded`
+- `services/diagnostics.py` fornece `verificar_conectividade_api()` com testes de HTTP e TCP.
 
 ---
 
 ## 🛠️ Desenvolvimento
 
-### Estrutura do Código
+### Adicionando um novo endpoint
+
+Crie um Blueprint em `app/routes/<dominio>.py`:
 
 ```python
-# app.py
-├── Configuração Flask
-├── Conexão com PostgreSQL
-├── Endpoints de Login
-├── Endpoints de Pedidos
-├── Endpoints de Dashboard
-├── Endpoints de Cardápio
-├── Endpoints de Avaliações
-└── Dados de teste (mock data)
+from flask import Blueprint, jsonify, request
+
+from ..proxy import proxy_request
+
+inventario_bp = Blueprint('inventario', __name__)
+
+@inventario_bp.route('/api/inventario', methods=['GET'])
+def listar_inventario():
+    status_code, response = proxy_request('GET', 'inventario')
+    return jsonify(response), status_code
 ```
 
-### Adicionar Novo Endpoint
+Registre o Blueprint em `app/__init__.py`:
 
 ```python
-@app.route('/api/nova-rota/<int:id>', methods=['GET'])
-def nova_rota(id):
-    try:
-        # Buscar dados
-        query = "SELECT * FROM tabela WHERE id = %s"
-        results = execute_query(query, (id,))
-        
-        return jsonify({
-            'status': 'success',
-            'data': results
-        })
-    except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+from .routes.inventario import inventario_bp
+
+def register_blueprints(flask_app):
+    flask_app.register_blueprint(inventario_bp)
 ```
-
-### Logs e Debug
-
-Desabilite o modo debug em produção:
-
-```python
-# app.py (linha final)
-app.run(debug=False, host='0.0.0.0', port=5000)
-```
-
----
-
-## 📊 Dados de Teste
-
-O backend inclui dados de teste (mock) que são retornados quando não há dados reais no banco. Isso permite testar o sistema sem configuração completa do PostgreSQL.
-
-**IDs de teste:**
-- Pedidos: 99, 100, 101, 102, 103
-
----
-
-## 🔒 Segurança
-
-- ✅ Validação de sessão via localStorage
-- ✅ Prepared statements (SQL injection protection)
-- ✅ CORS configurado
-- ✅ Tratamento de exceções
-- ⚠️ Configure senhas fortes no `config.env`
 
 ---
 
 ## 📝 Logs
 
-O sistema gera logs no console do Flask. Para ver todos os logs:
-
-```bash
-python app.py
-```
-
-**Logs importantes:**
-- `🔍 Buscando detalhes para o Pedido ID: X`
-- `⚠️ Pedido X não encontrado no banco. Retornando dados de teste.`
-- `✅ Detalhes do pedido X carregados.`
+- `proxy_request` imprime detalhes da requisição (método, URL, cookies, body).
+- `parse_html_response` informa os caminhos usados no parse.
+- `diagnostics.verificar_conectividade_api` mostra passo a passo de conectividade.
 
 ---
 
 ## 🚨 Troubleshooting
 
-### Erro: "could not connect to server"
-
-**Solução:**
-1. Verifique se PostgreSQL está rodando
-2. Confira as credenciais em `config.env`
-3. Teste a conexão manualmente
-
-### Erro: "column does not exist"
-
-**Solução:**
-Verifique se todas as tabelas estão criadas no banco. Execute as migrations necessárias.
-
-### Erro: "ModuleNotFoundError"
-
-**Solução:**
-```bash
-pip install -r requirements.txt
-```
+| Problema                       | Solução                                                                 |
+|--------------------------------|-------------------------------------------------------------------------|
+| `502 url_parse_error`          | Remover comentários inline na linha `API_EXTERNA_URL` do `config.env`. |
+| `503 connection_error`         | Verificar se API Java está ativa e acessível na porta configurada.      |
+| `504 timeout`                  | API externa demora a responder; checar rede ou aumentar `API_TIMEOUT`.  |
+| `403 servidor_nao_encontrado`  | API configurada como `localhost` mas não está rodando.                 |
+| `ModuleNotFoundError`          | Rodar `pip install -r requirements.txt`.                                |
 
 ---
 
 ## 📞 Suporte
 
-- Consulte os comentários no código (`app.py`)
-- Veja os arquivos de exemplo
-- Verifique os logs do Flask
+- Revise logs no terminal.
+- Garanta que o `config.env` está configurado corretamente.
+- Para novos módulos, mantenha a separação em blueprints e utilize `proxy_request`.
 
 ---
 
-**Desenvolvido para facilitar a gestão de restaurantes.**
+**Desenvolvido para facilitar a manutenção e evolução do SGR Desktop, com uma arquitetura modular e diagnósticos aprimorados.**
+

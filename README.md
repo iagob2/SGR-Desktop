@@ -1,339 +1,236 @@
-# 🍽️ SGR Desktop - Sistema de Gerenciamento de Restaurantes
+# 🍽️ SGR Desktop — Sistema de Gestão de Restaurantes
 
-## 📋 Sobre o Projeto
+O **SGR Desktop** é um ecossistema completo para gestão de restaurantes que combina:
+- **Backend Flask (Python)**: proxy inteligente para a API Java oficial, com parsing de respostas HTML/JSON, manutenção de sessão, cálculos analíticos locais e diagnósticos automáticos.
+- **Frontend Electron (HTML/CSS/JS)**: aplicação desktop multiplataforma focada em operadores, gestores e administradores, com interface moderna e responsiva.
 
-O **SGR Desktop** é um sistema completo de gerenciamento para restaurantes, desenvolvido com interface desktop moderna e funcionalidades robustas para controle de vendas, pedidos, cardápio, avaliações e muito mais.
-
-### ✨ Principais Funcionalidades
-
-- 📊 **Dashboard Inteligente** - Análise de vendas e produtos em tempo real
-- 💰 **Gestão de Vendas** - Controle completo de faturamento e relatórios
-- 🍕 **Cardápio Dinâmico** - Gerenciamento de itens do menu
-- ⭐ **Sistema de Avaliações** - Feedback dos clientes
-- 📦 **Gestão de Pedidos** - Acompanhamento do status em tempo real
-- 🔐 **Autenticação Segura** - Sistema de login integrado
+Funcionalidades cobertas:
+- Dashboard analítico com KPIs, evolução de vendas e top produtos
+- Controle financeiro/Ponto de Venda (PDV)
+- Gestão completa de cardápio (CRUD)
+- Fila de pedidos e atualização de status em tempo real
+- Avaliações de clientes e pratos com métricas e filtros
+- Autenticação e controle de acesso com diagnóstico de sessão
 
 ---
 
-## 🏗️ Arquitetura do Projeto
+## 📂 Estrutura Detalhada do Projeto
 
 ```
 SGR-Desktop/
-├── backend/          # API Flask + PostgreSQL
-├── frontend/         # Interface Electron + HTML/CSS/JS
-├── iniciar_sistema.bat  # Script de inicialização
-README.md         # Este arquivo
+├── backend/                      # Backend Flask (proxy + agregação)
+│   ├── app.py                    # Banner inicial + execução do servidor
+│   ├── config.env                # Variáveis privadas (URL API externa, timeout...)
+│   ├── config.env.example        # Exemplo seguro para versionamento
+│   ├── iniciar_completo.bat      # Script para subir apenas o backend
+│   ├── requirements.txt          # Dependências Python
+│   ├── README_BACKEND.md         # Documentação detalhada do backend
+│   └── app/
+│       ├── __init__.py           # Criação do app Flask, CORS, registro de blueprints
+│       ├── config.py             # Sanitização de `config.env` + exposição de constantes
+│       ├── proxy.py              # requests.Session, cookies, parsing HTML↔JSON, roteamento
+│       ├── routes/
+│       │   ├── analytics.py      # Top produtos, vendas por período, dashboard consolidado
+│       │   ├── avaliacoes.py     # Avaliações de restaurante/pratos
+│       │   ├── cardapio.py       # CRUD de cardápio (proxy da API Java)
+│       │   ├── pedidos.py        # Listagem, detalhes, status, dados mock
+│       │   └── system.py         # Login, perfil do restaurante, health check
+│       ├── services/
+│       │   └── diagnostics.py    # Verificação ativa (HTTP + socket) da API externa
+│       └── utils/
+│           └── status.py         # Funções puras reutilizáveis (`is_status_concluido`)
+│
+├── frontend/                     # Aplicação Electron (UI)
+│   ├── css/
+│   │   ├── avaliacoes.css
+│   │   ├── base.css
+│   │   ├── cardapio.css
+│   │   ├── dashboard.css
+│   │   ├── login.css
+│   │   ├── pedidos.css
+│   │   └── vendas.css
+│   ├── js/
+│   │   ├── avaliacoes.js
+│   │   ├── cardapio.js
+│   │   ├── dashboard.js
+│   │   ├── login.js
+│   │   ├── pedidos.js
+│   │   └── vendas.js
+│   ├── paginas/
+│   │   ├── avaliacoes.html
+│   │   ├── cardapio.html
+│   │   ├── dashboard.html
+│   │   ├── login.html
+│   │   ├── pedidos.html
+│   │   └── vendas.html
+│   ├── index.html                # Shell principal (SPA)
+│   ├── main.js                   # Processo principal do Electron
+│   ├── package.json / lock       # Scripts npm (start/build), dependências e builder
+│   └── dist/                     # Saída do empacotamento (`SGR Desktop Setup*.exe`, `win-unpacked/`)
+│
+├── iniciar_sistema.bat           # Sobe backend + frontend em modo desenvolvimento
+├── build.bat                     # Empacotamento final via Electron Builder
+├── COMPILACAO_FINAL.md           # Guia completo de build/distribuição
+├── INSTRUCOES_CLIENTE.md         # Manual de instalação e operação para clientes
+├── INSTRUCOES_COMPILACAO.md      # Compilação rápida em três comandos
+├── LICENSE                       # Licença MIT
+└── README.md                     # Este documento (guia central)
 ```
-
-### 🔧 Tecnologias Utilizadas
-
-**Backend:**
-- Python 3.11
-- Flask 2.3.3
-- PostgreSQL
-- psycopg2 (driver de banco de dados)
-
-**Frontend:**
-- Electron (aplicação desktop)
-- HTML5 + CSS3
-- JavaScript ES6+
-- Chart.js (gráficos)
 
 ---
 
-## 🚀 Como Fazer Funcionar na Sua Casa
+## 🧭 Arquitetura em Alto Nível
 
-### 📥 Pré-requisitos
+### 🔧 Backend (Flask)
 
-Antes de começar, você precisa ter instalado:
+| Componente                     | Responsabilidade                                                                                |
+|--------------------------------|--------------------------------------------------------------------------------------------------|
+| `app.py`                       | Exibe banner, roda `verificar_conectividade_api()` e inicializa o Flask (`app.run`).           |
+| `app/__init__.py`              | Cria a instância Flask, aplica CORS e registra todos os blueprints presentes em `routes/`.     |
+| `app/config.py`                | Lê `config.env`, remove comentários inline, garante barra final e define constantes (`API_*`). |
+| `app/proxy.py`                 | Função central `proxy_request`, manutenção da sessão `requests.Session`, parsing HTML<->JSON.  |
+| `routes/analytics.py`          | Busca pedidos e calcula métricas localmente (top produtos, vendas por período, dashboard).     |
+| `routes/avaliacoes.py`         | Faz proxy das avaliações (restaurante/pratos) e filtra por contexto.                           |
+| `routes/cardapio.py`           | CRUD do cardápio (lista, adiciona, edita, exclui itens).                                       |
+| `routes/pedidos.py`            | Listagem de pedidos, filtros, detalhes, status e fallback de dados mock.                       |
+| `routes/system.py`             | Login, perfil do restaurante, health check e diagnósticos.                                     |
+| `services/diagnostics.py`      | Testes HTTP + socket, logs com possíveis causas e orientações de correção.                     |
+| `utils/status.py`              | Funções puras (`is_status_concluido`) reutilizadas em analytics/pedidos.                       |
+| `README_BACKEND.md`            | Documentação aprofundada (fluxos, parsing, troubleshooting).                                   |
 
-1. **Python 3.11+** - [Download aqui](https://www.python.org/downloads/)
-2. **PostgreSQL 14+** - [Download aqui](https://www.postgresql.org/download/)
-3. **Node.js 18+** (apenas para desenvolvimento) - [Download aqui](https://nodejs.org/)
-4. **Git** (opcional) - [Download aqui](https://git-scm.com/downloads)
+### 🎨 Frontend (Electron)
 
-### 🔽 Passo 1: Clonar o Repositório
+| Componente         | Responsabilidade                                                                               |
+|--------------------|------------------------------------------------------------------------------------------------|
+| `main.js`          | Processo principal do Electron (cria janela, define menus, trata lifecycle).                  |
+| `index.html`       | Shell que carrega `paginas/*.html` via JavaScript e orquestra navegação.                      |
+| `paginas/*.html`   | Estrutura visual de cada módulo (login, dashboard, vendas, cardápio, pedidos, avaliações).    |
+| `js/*.js`          | Controladores: consumo da API via fetch, renderização de tabelas/gráficos, integração Chart.js.|
+| `css/*.css`        | Estilos globais (`base.css`) e específicos por módulo (cores, layout, responsividade).         |
+| `package.json`     | Scripts (`npm start`, `npm run build`), dependências e configuração do Electron Builder.       |
+| `dist/`            | Saída do `npm run build` (instalador `.exe` e pasta `win-unpacked/`).                          |
+
+### 🛠️ Scripts Essenciais
+
+| Script                        | Função                                                                                             |
+|-------------------------------|-----------------------------------------------------------------------------------------------------|
+| `iniciar_sistema.bat`         | Mata processos Python antigos, ativa `backend/venv`, sobe Flask (`app.py`) e roda `npm start`.     |
+| `backend/iniciar_completo.bat`| Automatiza criação/ativação da venv e execução do backend isoladamente.                            |
+| `build.bat`                   | Limpa `frontend/dist`, instala dependências, garante `electron-builder`, executa `npm run build`.  |
+
+---
+
+## ⚡ Execução Rápida (Desenvolvimento)
 
 ```bash
-# Abra o terminal/CMD e navegue até a pasta desejada
-cd C:\Users\SeuUsuario\Desktop
-
-# Clone o repositório
-git clone https://github.com/seu-usuario/SGR-Desktop.git
-
-# Entre na pasta do projeto
+# 1. Clonar repositório
+git clone https://github.com/<usuario>/SGR-Desktop.git
 cd SGR-Desktop
-```
 
-### 🔧 Passo 2: Configurar o Backend
-
-```bash
-# Entre na pasta do backend
+# 2. Backend
 cd backend
-
-# Crie um ambiente virtual Python (OPCIONAL mas RECOMENDADO)
 python -m venv venv
-
-# Ative o ambiente virtual
-# No Windows (CMD):
-venv\Scripts\activate
-
-# No Windows (PowerShell):
-.\venv\Scripts\Activate.ps1
-
-# No Linux/Mac:
-source venv/bin/activate
-
-# Instale as dependências
+venv\Scripts\activate          # Windows
+# source venv/bin/activate     # Linux/Mac
 pip install -r requirements.txt
-```
+copy config.env.example config.env
+# Edite config.env com a URL/timeout corretos
+python app.py                  # Servidor: http://localhost:5000
 
-### 🗄️ Passo 3: Configurar o Banco de Dados PostgreSQL
+# 3. Frontend
+cd ../frontend
+npm install
+npm start                      # Abre a aplicação Electron
 
-1. **Instale o PostgreSQL** se ainda não tiver
-2. **Crie um banco de dados:**
-
-```bash
-# Abra o terminal do PostgreSQL (pgAdmin ou psql)
-psql -U postgres
-```
-
-```sql
--- Crie o banco de dados
-CREATE DATABASE sgr_restaurante;
-
--- Crie um usuário (opcional)
-CREATE USER sgr_user WITH PASSWORD 'sua_senha_aqui';
-GRANT ALL PRIVILEGES ON DATABASE sgr_restaurante TO sgr_user;
-```
-
-3. **Configure a conexão no arquivo `backend/config.env`:**
-
-```env
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=sgr_restaurante
-DB_USER=postgres
-DB_PASSWORD=sua_senha
-```
-
-### ⚙️ Passo 4: Inicializar o Backend
-
-```bash
-# Certifique-se de estar na pasta backend
-cd backend
-
-# Se estiver usando ambiente virtual, ative-o primeiro
-
-# Execute o servidor Flask
-python app.py
-```
-
-Você verá algo como:
-```
- * Running on http://127.0.0.1:5000
-```
-
-✅ **Backend rodando!** Deixe essa janela aberta.
-
-### 🖥️ Passo 5: Iniciar o Sistema Desktop
-
-1. **Abra uma NOVA janela de terminal** (deixe o backend rodando na anterior)
-
-2. **Execute o script de inicialização:**
-
-```bash
-# Na pasta raiz do projeto (SGR-Desktop)
+# 4. Opcional: script completo
+cd ..
 .\iniciar_sistema.bat
 ```
 
-OU, se preferir manualmente:
+---
 
-```bash
-# Instale as dependências do frontend (apenas primeira vez)
-cd frontend
-npm install
+## 🧠 Funcionalidades Principais
 
-# Inicie o Electron
-npm start
-```
-
-### 🎉 Pronto!
-
-O sistema deve abrir em uma janela desktop. Faça login e comece a usar!
-
-**Credenciais padrão:**
-- Email: `admin@restaurante.com`
-- Senha: `admin123`
-*(Altere após primeiro acesso)*
+- Dashboard com KPIs, comparação semanal/mensal/anual e top produtos.
+- Gestão de cardápio com cadastro, edição e remoção de itens.
+- Controle de pedidos (listagem, filtros, detalhes, atualização de status).
+- Análise de avaliações de clientes e pratos (notas, comentários, médias).
+- Relatórios de vendas e consolidação de métricas no backend.
+- Autenticação integrada com manutenção de cookies/sessão no proxy.
+- Diagnóstico automático da API externa (timeout, URL inválida, conexão recusada).
 
 ---
 
-## 📁 Estrutura Detalhada dos Diretórios
+## 🔧 Tecnologias Principais
 
-### 🗂️ `backend/` - Servidor Flask
-
-**Arquivos importantes:**
-- `app.py` - API principal com todos os endpoints
-- `database_config.py` - Configuração de conexão com PostgreSQL
-- `config.env` - Variáveis de ambiente (senhas, host, etc.)
-- `requirements.txt` - Dependências Python
-- `iniciar_servidor.bat` - Script rápido para iniciar backend
-
-**Endpoints principais:**
-- `/api/login` - Autenticação
-- `/api/pedidos/restaurante/<id>` - Listar pedidos
-- `/api/cardapio/<id>` - Gerenciar cardápio
-- `/api/avaliacoes/<id>` - Avaliações dos clientes
-- `/api/dashboard/<id>` - Dados para gráficos
-
-### 🎨 `frontend/` - Interface Electron
-
-```
-frontend/
-├── index.html          # Página principal (SPA)
-├── main.js             # Processo principal do Electron
-├── package.json        # Dependências Node.js
-├── paginas/            # HTML de cada seção
-│   ├── dashboard.html
-│   ├── vendas.html
-│   ├── cardapio.html
-│   ├── avaliacoes.html
-│   └── pedidos.html
-├── js/                 # JavaScript de cada página
-│   ├── dashboard.js
-│   ├── vendas.js
-│   ├── cardapio.js
-│   ├── avaliacoes.js
-│   └── pedidos.js
-└── css/                # Estilos CSS
-    ├── base.css        # Estilos globais
-    ├── dashboard.css   # Específico para dashboard
-    └── ...
-```
+| Camada            | Tecnologia / Biblioteca               | Observações                                      |
+|-------------------|----------------------------------------|--------------------------------------------------|
+| Backend            | Python 3.11+, Flask 3.x, Flask-CORS   | Proxy, CORS, marshaling HTML/JSON                |
+|                    | Requests 2.x, python-dotenv 1.x       | Sessão HTTP persistida, saneamento de env        |
+| Frontend           | Electron 28.x, Node.js 18.x, npm 9.x  | Aplicação desktop, scripts de build/distribuição |
+| UI/Gráficos        | HTML5, CSS3 modular, Chart.js         | Layout responsivo, visualização analítica        |
+| Empacotamento      | Electron Builder                      | Geração de instaladores (.exe, win-unpacked)     |
 
 ---
 
-## 📄 Documentação Detalhada
+## 🧾 Documentação Complementar
 
-### 📘 Páginas do Sistema
-
-#### 1. **Dashboard** (`frontend/paginas/dashboard.html`)
-**Funcionalidade:** Painel principal com gráficos e KPIs  
-**JavaScript:** `frontend/js/dashboard.js`  
-**Importância:** Visualização consolidada de vendas, produtos mais vendidos e tendências.
-
-**Funcionalidades:**
-- Gráficos interativos (Chart.js)
-- Alternância entre "Vendas" e "Produtos"
-- Períodos: Semanal, Mensal, Anual
-- Cards de resumo com valores principais
-
-#### 2. **Gestão de Vendas** (`frontend/paginas/vendas.html`)
-**Funcionalidade:** Relatórios detalhados de vendas  
-**JavaScript:** `frontend/js/vendas.js`  
-**Importância:** Análise de faturamento, ticket médio e vendas por período.
-
-**Funcionalidades:**
-- Filtros por período
-- Exportação de relatórios
-- Gráfico de barras de faturamento
-- Top produtos mais vendidos
-
-#### 3. **Cardápio Dinâmico** (`frontend/paginas/cardapio.html`)
-**Funcionalidade:** Gerenciamento de itens do menu  
-**JavaScript:** `frontend/js/cardapio.js`  
-**Importância:** CRUD completo de pratos, bebidas e acompanhamentos.
-
-**Funcionalidades:**
-- Adicionar, editar, excluir itens
-- Upload de imagens
-- Gerenciamento de categorias
-- Atualização de preços
-
-#### 4. **Sistema de Avaliações** (`frontend/paginas/avaliacoes.html`)
-**Funcionalidade:** Feedback dos clientes  
-**JavaScript:** `frontend/js/avaliacoes.js`  
-**Importância:** Monitora satisfação e permite resposta às avaliações.
-
-**Funcionalidades:**
-- Visualização de estrelas
-- Média de avaliações
-- Filtro por nota
-- Resposta a comentários
-
-#### 5. **Gestão de Pedidos** (`frontend/paginas/pedidos.html`)
-**Funcionalidade:** Controle de pedidos em tempo real  
-**JavaScript:** `frontend/js/pedidos.js`  
-**Importância:** Acompanhamento de status, detalhes e atualização de pedidos.
-
-**Funcionalidades:**
-- Lista de pedidos com status
-- Modal de detalhes
-- Atualização de status (Pendente → Em Preparo → Pronto → Entregue)
-- Filtros por status e data
-- KPIs de pedidos
+- 📘 [`backend/README_BACKEND.md`](./backend/README_BACKEND.md) — referência completa do backend (rotas, parsing, diagnósticos).
+- 🧩 [`INSTRUCOES_CLIENTE.md`](./INSTRUCOES_CLIENTE.md) — instalação e primeiros passos para clientes finais.
+- ⚙️ [`COMPILACAO_FINAL.md`](./COMPILACAO_FINAL.md) — guia completo de empacotamento/distribuição.
+- ⚒️ [`INSTRUCOES_COMPILACAO.md`](./INSTRUCOES_COMPILACAO.md) — compilação rápida em três comandos.
 
 ---
 
-## 🛠️ Troubleshooting (Solução de Problemas)
+## 📦 Empacotamento & Distribuição
 
-### ❌ Problema: "ModuleNotFoundError: No module named 'flask'"
-
-**Solução:**
-```bash
-cd backend
-pip install -r requirements.txt
-```
-
-### ❌ Problema: "Error connecting to database"
-
-**Solução:**
-1. Verifique se o PostgreSQL está rodando
-2. Confira o arquivo `backend/config.env`
-3. Teste a conexão:
-```bash
-psql -U postgres -d sgr_restaurante
-```
-
-### ❌ Problema: "Cannot find module 'electron'"
-
-**Solução:**
-```bash
-cd frontend
-npm install
-```
-
-### ❌ Problema: Erro 500 ao carregar pedidos
-
-**Solução:** Verifique se o banco de dados está configurado corretamente. O sistema funciona com dados de teste se não houver dados reais.
+1. Conferir se backend (Flask) e frontend (Electron) estão funcionando em modo dev.
+2. Na raiz do projeto, executar:
+   ```bash
+   .\build.bat
+   ```
+   O script:
+   - remove builds antigos,
+   - instala dependências do frontend,
+   - garante `electron-builder`,
+   - roda `npm run build`.
+3. Saída em `frontend/dist/`:
+   ```
+   SGR Desktop Setup <versão>.exe
+   win-unpacked/
+   ```
+4. Testar o instalador em uma máquina limpa (ou VM) para validar login, dashboard e fluxos principais.
 
 ---
 
-## 📞 Suporte
+## 🧩 Troubleshooting
 
-Para dúvidas ou problemas:
-1. Verifique a documentação em `backend/README_BACKEND.md`
-2. Consulte os arquivos de exemplo
-3. Abra uma issue no GitHub
-
----
-
-## 📝 Licença
-
-Este projeto é de uso livre para fins educacionais e comerciais.
+| Problema                                | Causa provável                                    | Ação recomendada                                                                  |
+|-----------------------------------------|---------------------------------------------------|-----------------------------------------------------------------------------------|
+| `url_parse_error` ao iniciar Flask      | `API_EXTERNA_URL` com comentários inline/whitespace | Limpar a linha no `config.env` ou copiar para nova linha sem comentários.         |
+| Timeout (504) nas requisições           | API externa indisponível ou lenta                 | Verificar conectividade, aumentar `API_TIMEOUT` ou usar dados mock temporariamente.|
+| `requests.exceptions.ConnectionError`   | Proxy Flask fora do ar ou porta ocupada           | Garantir `python app.py` ativo e porta 5000 livre.                                |
+| `npm start` não abre a janela Electron  | Node.js desatualizado / dependências faltantes    | Atualizar Node ≥ 18.x e rodar `npm install`.                                      |
+| `electron-builder not found`            | Dependência ausente no build                      | Executar `npm install --save-dev electron-builder`.                                |
+| CRUDs falhando / sessão perdida         | Cookies expirados ou múltiplos `JSESSIONID`       | Relogar; o proxy limpa e renova cookies automaticamente.                          |
 
 ---
 
-## 🎨 Esquema de Cores
+## 🧪 Dados & Ambiente de Teste
 
-O sistema utiliza:
-- **Verde primário:** `#2CB480` - Elementos de destaque
-- **Verde hover:** `#24A06B` - Estados de hover
-- **Azul:** `#3B82F6` - Reserado para gráficos
-
-Mais detalhes em: `CHANGELOG_CORES.md`
+Quando a API Java externa não responde, o backend fornece dados mock (especialmente em `routes/pedidos.py`), garantindo que o frontend permaneça funcional para desenvolvimento, demonstrações ou ambientes sem conexão.
 
 ---
 
-**Desenvolvido com ❤️ para facilitar a gestão de restaurantes.**
+## 🧑‍💻 Autor e Licença
+
+**Iago Correia**  
+Fatec Praia Grande — Desenvolvimento de Software Multiplataforma  
+📍 Praia Grande, SP  
+
+Distribuído sob a licença **MIT** — consulte [LICENSE](./LICENSE) para detalhes.
+
+---
+
+**✨ SGR Desktop — Simplificando a gestão e potencializando resultados.**
+

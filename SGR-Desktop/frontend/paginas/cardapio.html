@@ -71,6 +71,7 @@
                         </th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID/CÓDIGO</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PRATO</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CATEGORIA</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">DESCRIÇÃO</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PREÇO</th>
                     </tr>
@@ -107,10 +108,24 @@
             </div>
             
             <div class="form-group">
+                <label for="categoriaPrato" class="form-label">Categoria *</label>
+                <select id="categoriaPrato" name="categoria" class="form-select" required>
+                    <option value="">Selecione uma categoria</option>
+                    <option value="ENTRADA">Entrada</option>
+                    <option value="PRATO_PRINCIPAL">Prato Principal</option>
+                    <option value="SOBREMESA">Sobremesa</option>
+                    <option value="BEBIDA">Bebida</option>
+                    <option value="LANCHE">Lanche</option>
+                    <option value="SALADA">Salada</option>
+                    <option value="ACOMPANHAMENTO">Acompanhamento</option>
+                    <option value="OUTROS">Outros</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
                 <label for="precoPrato" class="form-label">Preço (R$) *</label>
                 <input type="number" id="precoPrato" name="preco" class="form-input" step="0.01" min="0" placeholder="Ex: 25.90" required>
             </div>
-            
             
             <div class="form-group">
                 <label for="imagemPrato" class="form-label">URL da Imagem</label>
